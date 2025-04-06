@@ -41,4 +41,4 @@ COPY . .
 # Render sets the PORT environment variable, Gunicorn uses it automatically
 # Use --timeout to allow longer for potentially slow AI requests
 # Adjust --workers based on Render's free tier CPU (start with 1 or 2)
-CMD ["gunicorn", "--bind", "0.0.0.0:${PORT}", "--workers", "2", "--timeout", "120", "app:app"]
+CMD gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 app:app
