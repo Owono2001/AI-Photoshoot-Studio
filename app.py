@@ -28,22 +28,43 @@ UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 GENERATED_FOLDER = os.path.join(BASE_DIR, 'generated')
 STATIC_FOLDER = os.path.join(BASE_DIR, 'static') # Flask default, but explicit can be good
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
-# Ensure directories exist
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(GENERATED_FOLDER, exist_ok=True)
-os.makedirs(os.path.join(STATIC_FOLDER, 'styles'), exist_ok=True) # Ensure styles dir exists
+# --- Persistent Storage Configuration for Render ---
+# Check if running on Render and the disk mount path is set
+RENDER_DISK_MOUNT_PATH = os.getenv('RENDER_DISK_MOUNT_PATH')
+if RENDER_DISK_MOUNT_PATH and os.path.isdir(RENDER_DISK_MOUNT_PATH):
+    print(f"INFO: Detected Render disk at: {RENDER_DISK_MOUNT_PATH}")
+    # Define persistent directories ON THE RENDER DISK
+    PERSISTENT_STORAGE_BASE = RENDER_DISK_MOUNT_PATH
+    SESSION_DIR = os.path.join(PERSISTENT_STORAGE_BASE, '.flask_session')
+    UPLOAD_DIR = os.path.join(PERSISTENT_STORAGE_BASE, 'uploads')
+    GENERATED_DIR = os.path.join(PERSISTENT_STORAGE_BASE, 'generated')
+    # Optional: Style directory might still be in static if they don't change
+    STATIC_FOLDER = os.path.join(BASE_DIR, 'static')
+else:
+    # Fallback for local development (or if disk not mounted correctly)
+    print("INFO: Render disk not detected or path invalid. Using local directories.")
+    SESSION_DIR = os.path.join(BASE_DIR, '.flask_session')
+    UPLOAD_DIR = os.path.join(BASE_DIR, 'uploads')
+    GENERATED_DIR = os.path.join(BASE_DIR, 'generated')
+    STATIC_FOLDER = os.path.join(BASE_DIR, 'static')
 
-app = Flask(__name__, static_folder=STATIC_FOLDER) # Explicit static folder
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['GENERATED_FOLDER'] = GENERATED_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100 MB max upload size
+# Ensure directories exist (both locally and on Render disk)
+os.makedirs(SESSION_DIR, exist_ok=True)
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(GENERATED_DIR, exist_ok=True)
+# Ensure static/styles exists if needed for default styles
+os.makedirs(os.path.join(STATIC_FOLDER, 'styles'), exist_ok=True)
 
-# Configure Flask-Session (Filesystem based)
-app.config["SESSION_PERMANENT"] = False # Session lasts as long as browser is open
-app.config["SESSION_TYPE"] = "filesystem" # Store session data in a folder
-app.config["SESSION_FILE_DIR"] = os.path.join(BASE_DIR, '.flask_session') # Folder for session files
-app.config["SECRET_KEY"] = os.getenv('FLASK_SECRET_KEY', 'a_very_secure_fallback_secret_key_3984u2') # CHANGE THIS IN PRODUCTION!
-os.makedirs(app.config["SESSION_FILE_DIR"], exist_ok=True) # Ensure session dir exists
+app = Flask(__name__, static_folder=STATIC_FOLDER) # Use static folder path
+app.config['UPLOAD_FOLDER'] = UPLOAD_DIR # Use persistent/local path
+app.config['GENERATED_FOLDER'] = GENERATED_DIR # Use persistent/local path
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
+
+# Configure Flask-Session
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+app.config["SESSION_FILE_DIR"] = SESSION_DIR # Use persistent/local path
+app.config["SECRET_KEY"] = os.getenv('FLASK_SECRET_KEY', 'local_fallback_secret_key_change_me') # Read from Env Var
 Session(app)
 
 # --- Global Stats (Simple In-Memory - Reset on App Restart) ---
