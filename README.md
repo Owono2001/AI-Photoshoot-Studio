@@ -160,7 +160,7 @@ Follow these steps to set up and run the AI Photoshoot Studio locally.
 
 **Proprietary - Under Development**
 
-© 2025 Pedro Fabian Mange Owono. All Rights Reserved.
+© 2025 Pedro Fabian Owono. All Rights Reserved.
 
 This project is currently under active development and refinement by Pedro Fabian Mange Owono Ondo. As such, the code, assets, and functionalities presented here are **not licensed for reuse, modification, distribution, or deployment** by any other party without explicit written permission from the author.
 
