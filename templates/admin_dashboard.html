@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - AI Photoshoot Studio</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 20px; background-color: #f4f7f6; color: #333; }
+        .container { max-width: 900px; margin: auto; background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #4a4a4a; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        h1 { font-size: 1.8em; }
+        h2 { font-size: 1.4em; margin-top: 30px;}
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .stat-item { background-color: #f9f9f9; padding: 15px; border-radius: 5px; border: 1px solid #eee; }
+        .stat-item strong { display: block; font-size: 1.5em; color: #0077b6; margin-bottom: 5px; }
+        .stat-item span { font-size: 0.9em; color: #555; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
+        th { background-color: #e9ecef; font-weight: 600; }
+        tr:hover { background-color: #f1f1f1; }
+        .status-ok { color: green; }
+        .status-warn { color: orange; }
+        .status-error { color: red; }
+        pre { background: #eee; padding: 10px; border-radius: 4px; font-size: 0.9em; white-space: pre-wrap; word-wrap: break-word; }
+        .model-status { font-weight: bold; }
+         ul { padding-left: 20px; }
+         li { margin-bottom: 5px;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h1>
+
+        <h2><i class="fas fa-chart-bar"></i> Usage Statistics (Since Last Restart)</h2>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <strong>{{ data.active_sessions_estimate }}</strong>
+                <span>Estimated Active Sessions (based on session files)</span>
+            </div>
+            <div class="stat-item">
+                <strong>{{ data.unique_visits_since_restart }}</strong>
+                <span>Unique Visits</span>
+            </div>
+            <div class="stat-item">
+                <strong>{{ data.single_effects_created_since_restart }}</strong>
+                <span>Effects Applied</span>
+            </div>
+             <div class="stat-item">
+                <strong>{{ data.photobooths_created_since_restart }}</strong>
+                <span>Photobooths Created</span>
+            </div>
+        </div>
+
+         {% if data.geoip_enabled %}
+        <h2><i class="fas fa-globe-americas"></i> Visitor Countries (Approximate)</h2>
+        {% if data.country_counts %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Country</th>
+                    <th>Visits</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for country, count in data.country_counts.items() %}
+                <tr>
+                    <td>{{ country }}</td>
+                    <td>{{ count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+         {% else %}
+         <p>No country data recorded yet.</p>
+         {% endif %}
+         {% else %}
+         <h2><i class="fas fa-globe-americas"></i> Visitor Countries</h2>
+         <p class="status-warn">GeoIP Location tracking is disabled. (Check `geoip2` install and database path: `{{ data.geoip_db_path }}`)</p>
+         {% endif %}
+
+        <h2><i class="fas fa-cogs"></i> System & Model Status</h2>
+         <ul>
+             <li><strong>Server Hostname:</strong> {{ data.server_hostname }}</li>
+             <li><strong>Server IP:</strong> {{ data.server_ip }}</li>
+             <li><strong>Python Version:</strong> {{ data.python_version }}</li>
+             <li><strong>Flask Version:</strong> {{ data.flask_version }}</li>
+             <li><strong>Pillow Version:</strong> {{ data.pillow_version }}</li>
+             <li><strong>OpenCV Version:</strong> {{ data.opencv_version }}</li>
+         </ul>
+
+         <h4>AI Models:</h4>
+         <ul>
+            <li>MediaPipe VBG: <span class="model-status {{ 'status-ok' if data.ai_models_loaded.mediapipe else 'status-error' }}">{{ 'Loaded' if data.ai_models_loaded.mediapipe else 'Not Loaded' }}</span> (TF: {{ data.mediapipe_version }})</li>
+            <li>TensorFlow Style Transfer: <span class="model-status {{ 'status-ok' if data.ai_models_loaded.tensorflow else 'status-error' }}">{{ 'Loaded' if data.ai_models_loaded.tensorflow else 'Not Loaded' }}</span> (TF: {{ data.tensorflow_version }})</li>
+         </ul>
+
+        <p><small>Note: Statistics reset when the application restarts.</small></p>
+
+    </div>
+     <!-- Optional: Add FontAwesome if you want icons -->
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</body>
+</html>

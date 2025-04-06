@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ AI Photoshoot Studio ✨</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <header class="app-header">
+        <h1><i class="fas fa-camera-retro"></i> AI Photoshoot Studio</h1>
+        <p>Upload, Capture, Edit & Apply Amazing Effects!</p>
+    </header>
+
+    <main class="main-container">
+
+        <section class="control-panel card">
+            <h2><i class="fas fa-sliders-h"></i> Controls</h2>
+
+            <details class="collapsible-section instructions-section">
+                <summary>
+                    <i class="fas fa-info-circle"></i> How to Use This App
+                    <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span>
+                </summary>
+                <div class="collapsible-content instructions-content">
+                    <h4><i class="fas fa-image"></i> 1. Get Your Image</h4>
+                    <ul>
+                        <li><strong>Upload:</strong> Click <i class="fas fa-upload"></i> 'Upload File' and select a PNG, JPG, or WEBP image.</li>
+                        <li><strong>Webcam:</strong> Click <i class="fas fa-video"></i> 'Start Webcam', allow permission, then click <i class="fas fa-camera"></i> 'Capture Frame'. Click <i class="fas fa-video-slash"></i> 'Stop Webcam' when done.</li>
+                    </ul>
+                    <h4><i class="fas fa-edit"></i> 2. Edit Source Image (Optional)</h4>
+                    <p>Use the tools above the 'Source Editor' canvas:</p>
+                    <ul>
+                        <li><i class="fas fa-mouse-pointer"></i> **Select/Move:** Select drawings or text, then drag to move.</li>
+                        <li><i class="fas fa-pencil-alt"></i> **Draw:** Draw on the image. Use controls for color/width.</li>
+                        <li><i class="fas fa-font"></i> **Text:** Add text. Double-click text on canvas to edit. Use color picker.</li>
+                        <li><i class="fas fa-trash-alt"></i> **Delete:** Select an item (<i class="fas fa-mouse-pointer"></i>), then click to remove.</li>
+                        <li><i class="fas fa-eraser"></i> **Clear Edits:** Removes only drawings/text, keeps base image.</li>
+                    </ul>
+                    <h4><i class="fas fa-photo-film"></i> 3. Photobooth Fun! (Optional)</h4>
+                    <ul>
+                        <li>Ensure webcam (<i class="fas fa-video"></i>) is active.</li>
+                        <li>Choose Layout, Shots, GIF option first.</li>
+                        <li>Click <i class="fas fa-photo-film"></i> 'Start Photobooth'.</li>
+                        <li>Follow countdown, pose for shots! Result appears on the right.</li>
+                    </ul>
+                    <h4><i class="fas fa-magic"></i> 4. Apply Effects</h4>
+                    <ul>
+                        <li>Select an effect from the dropdown.</li>
+                        <li>Adjust parameters if they appear.</li>
+                        <li>Click <i class="fas fa-magic"></i> 'Apply Backend Effect'. Be patient for AI effects.</li>
+                    </ul>
+                    <h4><i class="fas fa-download"></i> 5. Download Your Creation</h4>
+                    <ul>
+                        <li>Result appears in the 'Processed Result' box.</li>
+                        <li>Click <i class="fas fa-download"></i> 'Download Result' below it.</li>
+                    </ul>
+                    <p><em>Experiment and enjoy creating!</em></p>
+                </div>
+            </details>
+            <div class="control-grid"> <fieldset class="control-group">
+                    <legend>1. Get Image</legend>
+                    <div class="input-method">
+                        <label for="photo_upload" class="button-like file-upload-label" title="Upload PNG, JPG, WEBP (Check Size Limit)">
+                            <i class="fas fa-upload"></i> Upload File
+                        </label>
+                        <input type="file" id="photo_upload" name="photo_file" accept="image/png, image/jpeg, image/webp" class="visually-hidden">
+                        <span class="input-or">OR</span>
+                        <div class="webcam-controls">
+                            <button id="start_webcam" title="Start your webcam"><i class="fas fa-video"></i> Start Webcam</button>
+                            <button id="stop_webcam" disabled title="Stop the webcam"><i class="fas fa-video-slash"></i> Stop Webcam</button>
+                            <button id="capture_frame" disabled title="Capture current frame to editor"><i class="fas fa-camera"></i> Capture Frame</button>
+                        </div>
+                    </div>
+                    <div id="webcam_area" style="display: none;">
+                        <div id="webcam-wrapper">
+                            <video id="webcam_video" width="320" height="240" autoplay playsinline></video>
+                        </div>
+                        <canvas id="webcam_capture_canvas" style="display: none;"></canvas>
+                    </div>
+                </fieldset>
+
+                <fieldset class="control-group">
+                    <legend>Photobooth Fun!</legend>
+                    <details class="collapsible-section photobooth-details">
+                         <summary>
+                             Show/Hide Options & Start
+                             <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span>
+                         </summary>
+                         <div class="collapsible-content"> <div class="photobooth-options">
+                                <div class="param-item">
+                                    <label for="photobooth_layout">Layout:</label>
+                                    <div class="select-wrapper">
+                                        <select id="photobooth_layout" name="photobooth_layout">
+                                            <option value="vertical_strip" selected>Vertical Strip</option>
+                                            <option value="grid_2x2">2x2 Grid</option>
+                                        </select>
+                                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                                    </div>
+                                </div>
+                                <div class="param-item">
+                                    <label for="photobooth_shots">Shots:</label>
+                                    <div class="select-wrapper">
+                                        <select id="photobooth_shots" name="photobooth_shots">
+                                            <option value="3">3 Photos</option>
+                                            <option value="4" selected>4 Photos</option>
+                                            <option value="6">6 Photos</option>
+                                        </select>
+                                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                                    </div>
+                                </div>
+                                <div class="param-item">
+                                    <input type="checkbox" id="photobooth_gif" name="photobooth_gif">
+                                    <label for="photobooth_gif" style="margin-left: 5px; flex-basis: auto;">Create Animated GIF?</label>
+                                    <small class="param-hint" style="flex-basis: 100%;">Creates a GIF instead of a static image.</small>
+                                </div>
+                            </div>
+                            <button id="start_photobooth" class="photobooth-button" title="Start the photobooth sequence!">
+                                <i class="fas fa-photo-film"></i> Start Photobooth
+                            </button>
+                            <div id="photobooth_controls" class="photobooth-active-controls" style="display: none;">
+                                <div id="photobooth_status" class="photobooth-status-display">Initializing...</div>
+                                <div id="photobooth_countdown_visual" class="photobooth-countdown-timer" style="display: none;">
+                                    <svg viewBox="0 0 100 100">
+                                        <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
+                                        <circle class="timer-progress" cx="50" cy="50" r="45"></circle>
+                                    </svg>
+                                    <div id="photobooth_countdown_text" class="timer-text">3</div>
+                                </div>
+                                <div id="photobooth_snapshot_preview"></div>
+                                <button id="cancel_photobooth" class="button-like danger" style="display: none; margin-top: 10px;">Cancel Sequence</button>
+                            </div>
+                         </div> </details>
+                </fieldset>
+
+                <fieldset class="control-group">
+                    <legend>2. Choose Effect</legend>
+                    <div class="select-wrapper">
+                        <select id="effect_select">
+                            {% for key, data in effects.items() %}
+                            <option value="{{ key }}">{{ data.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                </fieldset>
+
+                <fieldset class="control-group" id="effect_params_group">
+                    <legend>3. Adjust Parameters</legend>
+                     <details class="collapsible-section params-details" open> <summary>
+                             Show/Hide Parameters
+                             <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span>
+                         </summary>
+                          <div class="collapsible-content"> <div id="effect_params" class="effect-params-container">
+                                <div class="param-item"><small>(Select an effect to see parameters)</small></div>
+                            </div>
+                         </div> </details>
+                </fieldset>
+
+                <fieldset class="control-group apply-group">
+                    <legend>4. Apply!</legend>
+                    <button id="apply_effect_button" class="main-action-button">
+                        <i class="fas fa-magic"></i> </button>
+                </fieldset>
+
+            </div> <div id="error_message" class="error-message" style="display: none;"></div>
+
+        </section> <section class="canvas-area">
+            <div class="canvas-container card">
+                <h3><i class="fas fa-edit"></i> Source Editor</h3>
+                <div class="fabric-controls">
+                    <button id="tool_select" class="fabric-tool-btn" title="Select/Move Objects"><i class="fas fa-mouse-pointer"></i></button>
+                    <button id="tool_draw" class="fabric-tool-btn" title="Free Draw"><i class="fas fa-pencil-alt"></i></button>
+                    <input type="color" id="draw_color" value="#FF0000" title="Drawing/Text Color">
+                    <label for="draw_width" class="visually-hidden">Brush Width</label>
+                    <input type="range" id="draw_width" min="1" max="50" value="5" title="Drawing Brush Width">
+                    <span id="draw_width_value" class="range-value">5</span>
+                    <button id="tool_add_text" class="fabric-tool-btn" title="Add Text"><i class="fas fa-font"></i></button>
+                    <button id="delete_selected" class="fabric-tool-btn danger" title="Delete Selected Object(s)"><i class="fas fa-trash-alt"></i></button>
+                    <button id="clear_canvas_edits" class="fabric-tool-btn warning" title="Clear only drawings/text (keeps base image)"><i class="fas fa-eraser"></i></button>
+                </div>
+                <div id="source_canvas_wrapper" class="canvas-wrapper">
+                    <canvas id="source_canvas"></canvas>
+                    <div id="source_placeholder" class="placeholder-text">
+                        <i class="fas fa-image"></i><br>Upload, Capture or Start Photobooth
+                    </div>
+                </div>
+            </div>
+
+            <div class="canvas-container card">
+                <h3><i class="fas fa-image"></i> Processed Result</h3>
+                <div class="results-display">
+                    <div id="loading_indicator" class="loading-indicator" style="display: none;">
+                        <div class="spinner"></div>
+                        <span class="loading-text">Processing...</span>
+                    </div>
+                    <div id="processing_time" class="processing-time" style="display: none;"></div>
+                    <div id="result_canvas_wrapper" class="canvas-wrapper">
+                        <canvas id="result_canvas"></canvas>
+                        <div id="processed_placeholder" class="placeholder-text">
+                            <i class="fas fa-lightbulb"></i><br>Result will appear here
+                        </div>
+                    </div>
+                    <a id="download_link" href="#" download="photoshoot_result.png" style="display: none;" class="button-like download-button">
+                        <i class="fas fa-download"></i> Download Result
+                    </a>
+                </div>
+            </div>
+        </section> </main> <footer class="app-footer">
+        <div class="footer-content">
+            <p class="creator-info">
+                &copy; 2025 <a href="https://github.com/Owono2001" target="_blank" rel="noopener noreferrer" title="Visit Pedro's GitHub Profile">Pedro Fabian Owono</a>.
+                All rights reserved.
+            </p>
+            <p class="creator-bio">
+                Final-Year Computer Engineering Student | AI & Software Development | Spanish Tutor
+            </p>
+            <hr class="footer-divider">
+            <p class="tech-info">
+                Powered by Flask, OpenCV, MediaPipe, TensorFlow, Fabric.js &amp; Your Creativity!
+                <span style="display: block; font-size: 0.8em; opacity: 0.6; margin-top: 5px;">Session ID: {{ session_id }}</span>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        const availableEffectsData = JSON.parse('{{ effects | tojson | safe }}');
+    </script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,561 @@
+/* --- Variables and Base Styles --- */
+:root {
+    /* Theme Gradient Colors */
+    --gradient-color-1: #6a11cb; /* Deep Purple */
+    --gradient-color-2: #2575fc; /* Vibrant Blue */
+    --gradient-color-3: #f72585; /* Bright Pink */
+    --gradient-color-4: #4cc9f0; /* Light Blue/Cyan */
+
+    /* Base Functional Colors */
+    --primary-color: var(--gradient-color-1);
+    --secondary-color: var(--gradient-color-2);
+    --accent-color: #ff6b6b; /* Coral Red Accent */
+    --background-color: #f4f7f6; /* Base page bg (mostly covered by gradient) */
+    --text-color: #333333; /* Base text color */
+    --muted-text-color: #6c757d; /* Muted text */
+    --border-color: #dee2e6; /* Default border */
+    --error-color: #dc3545;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: var(--error-color);
+
+    /* Glassmorphism Card Variables */
+    --card-bg-color: rgba(255, 255, 255, 0.65); /* Semi-transparent white */
+    --card-blur-amount: 8px;
+    --card-border-color: rgba(255, 255, 255, 0.2); /* Lighter border for glass */
+
+    /* Layout Variables */
+    --header-height: 60px; /* Reference, actual height is auto */
+    --footer-height: 50px; /* Reference, actual height is auto */
+    --border-radius: 10px; /* Slightly larger radius */
+    --box-shadow-base: 0 4px 15px rgba(0, 0, 0, 0.08);
+    --box-shadow-lifted: 0 8px 32px 0 rgba(31, 38, 135, 0.17);
+
+    /* Transitions */
+    --transition-speed: 0.4s;
+    --transition-curve-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
+    --transition-curve-bounce: cubic-bezier(0.68, -0.55, 0.27, 1.55);
+
+    /* Dynamic Theme Variables (defaults match base theme) */
+    --dynamic-primary: var(--primary-color);
+    --dynamic-secondary: var(--secondary-color);
+    --dynamic-accent: var(--accent-color);
+    --dynamic-primary-rgb: 106, 17, 203; /* RGB for Purple */
+    --dynamic-card-bg-filter: none; /* For filters like grayscale/sepia */
+    --dynamic-header-gradient: linear-gradient(to right, var(--dynamic-primary), var(--dynamic-secondary));
+}
+
+/* --- Reset & Base Body --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Animated Gradient Background */
+@keyframes gradientAnimator {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+html, body {
+    height: 100%; /* Ensure html and body take full height */
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Use min-height to allow content to grow beyond viewport */
+    height: 100%; /* Explicit height */
+    font-size: 16px;
+    /* Apply Animated Gradient */
+    background: linear-gradient(-45deg, var(--gradient-color-4), var(--gradient-color-3), var(--gradient-color-2), var(--gradient-color-1));
+    background-size: 300% 300%;
+    animation: gradientAnimator 25s ease infinite;
+    background-color: var(--background-color); /* Fallback */
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    position: relative; /* Needed for particle canvas positioning */
+}
+
+/* --- Base Typography --- */
+h1, h2, h3 {
+    color: #212529; /* Darker default for contrast on glass */
+    margin-bottom: 0.75em;
+    font-weight: 600;
+}
+h1 { font-size: 1.8em; }
+h2 { font-size: 1.5em; margin-top: 0; }
+h3 { font-size: 1.3em; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.3em;}
+
+a {
+    color: var(--dynamic-secondary, var(--secondary-color)); /* Use dynamic secondary for links */
+    text-decoration: none;
+    transition: color var(--transition-speed) ease;
+}
+a:hover {
+    color: var(--dynamic-primary, var(--primary-color));
+    text-decoration: underline;
+}
+
+/* --- Layout --- */
+.app-header {
+    background: rgba(0, 0, 0, 0.1); /* Subtle dark transparent */
+    backdrop-filter: blur(5px); /* Glass effect */
+    -webkit-backdrop-filter: blur(5px);
+    color: white;
+    padding: 15px 25px; /* More padding */
+    text-align: center;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    min-height: auto; /* Adjust height based on content */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: sticky; /* Make header sticky */
+    top: 0;
+    z-index: 100; /* Ensure header is above particles */
+    transition: background var(--transition-speed) ease; /* Added transition */
+    flex-shrink: 0; /* Prevent header from shrinking */
+}
+.app-header h1 {
+    color: #ffffff;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    margin-bottom: 0.2em; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.app-header p { font-size: 0.95em; opacity: 0.9; color: #eee; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);}
+
+
+.main-container {
+    display: flex;
+    flex-direction: column; /* Stack controls above canvas on small screens */
+    flex-grow: 1; /* *** THIS IS KEY to make it take available space *** */
+    padding: 20px; /* Reduced */
+    gap: 25px; /* Reduced */
+    z-index: 1; /* Ensure content is above particles */
+    position: relative;
+    overflow-y: auto; /* Allow scrolling within main container if needed */
+    min-height: 0; /* Necessary for flex-grow in some contexts */
+}
+
+/* Glassmorphism Card Effect */
+.card {
+    background-color: var(--card-bg-color);
+    backdrop-filter: blur(var(--card-blur-amount));
+    -webkit-backdrop-filter: blur(var(--card-blur-amount)); /* Safari */
+    border-radius: 12px; /* More rounded */
+    box-shadow: var(--box-shadow-lifted);
+    border: 1px solid var(--card-border-color);
+    padding: 20px; /* Reduced */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+.card:hover {
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.22);
+    transform: translateY(-3px);
+}
+/* Fallback for non-supporting browsers */
+@supports not (backdrop-filter: blur(1px)) {
+    .card {
+        background-color: rgba(255, 255, 255, 0.9); /* More opaque fallback */
+    }
+}
+/* Ensure text readability on glass */
+.card, .card h2, .card h3, .card label, .card p, .card small, .card select, .card option, .card input, .card span {
+    color: var(--text-color);
+}
+.card h2, .card h3, .card legend {
+    color: #212529; /* Darker headings */
+}
+.card .muted-text-color, .card small.param-hint {
+    color: #5a5a5a; /* Darker muted text */
+}
+
+
+/* Responsive Layout */
+@media (min-width: 1024px) {
+    .main-container {
+        flex-direction: row;
+        align-items: stretch; /* Ensure children stretch vertically */
+    }
+    .control-panel {
+        flex: 0 0 380px; /* Fixed width for control panel */
+        max-width: 420px;
+        /* height: fit-content; */ /* REMOVED - Allow stretching or use max-height if needed */
+        /* align-self: flex-start; */ /* REMOVED - Allow stretching */
+        height: auto; /* Allow it to grow */
+        max-height: calc(100vh - var(--header-height) - var(--footer-height) - 40px); /* Optional: Prevent excessive height, adjust 40px padding */
+        overflow-y: auto; /* Add scroll if content exceeds height */
+    }
+    .canvas-area {
+        flex: 1 1 auto; /* Take remaining horizontal space */
+        display: flex; /* Use flex for vertical stacking/stretching */
+        flex-direction: column; /* Stack canvas containers vertically */
+        gap: 25px; /* Keep the gap between source/result */
+        min-height: 0; /* Needed for flex children height in some cases */
+    }
+     /* No change needed for this media query block: */
+     /* .canvas-area { flex-direction: row; align-items: flex-start; } */
+     /* This inner row layout is handled below */
+
+}
+@media (min-width: 768px) {
+     /* This rule was causing issues on larger screens when main-container became row */
+     /* .canvas-area { flex-direction: row; align-items: flex-start; } */
+     /* Instead, we handle the source/result layout within canvas-area itself if needed */
+     /* If source/result should be side-by-side within canvas-area: */
+     /* .canvas-area { flex-direction: row; align-items: flex-start; } */
+     /* .canvas-container { flex: 1 1 50%; } */
+
+     /* Keep default column layout for canvas-area for simplicity */
+}
+
+/* Canvas Area and its Children - Ensuring Vertical Stretch */
+.canvas-area {
+    /* Base styles for small screens */
+    display: flex;
+    flex-direction: column;
+    gap: 25px; /* Reduced */
+}
+
+.canvas-container.card {
+    display: flex; /* Use flexbox inside the card */
+    flex-direction: column; /* Stack title, controls, wrapper vertically */
+    flex-grow: 1; /* *** KEY: Allow card to grow vertically *** */
+    min-height: 0; /* Needed for flex children to size correctly */
+}
+
+.canvas-wrapper {
+    border: 2px dashed rgba(0,0,0,0.1);
+    margin: 10px auto;
+    position: relative;
+    background-color: rgba(255, 255, 255, 0.3);
+    width: 100%;
+    /* min-height: 250px; */ /* REMOVE fixed min-height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: calc(var(--border-radius) / 1.5);
+    transition: border-color var(--transition-speed) ease;
+    flex-grow: 1; /* *** KEY: Allow canvas wrapper to fill the card *** */
+    min-height: 150px; /* Add a smaller min-height */
+}
+
+
+/* --- Footer --- */
+.app-footer {
+    background-color: #e9ecef;
+    color: var(--muted-text-color);
+    padding: 20px 20px 15px 20px; /* Adjusted padding */
+    text-align: center;
+    font-size: 0.9em;
+    border-top: 1px solid var(--border-color);
+    margin-top: auto; /* Pushes footer to bottom in flex column */
+    line-height: 1.5;
+    position: relative; /* For z-index if needed over particles */
+    z-index: 1;
+    flex-shrink: 0; /* Prevent footer from shrinking */
+}
+.app-footer .footer-content p { margin: 5px 0; }
+.app-footer .creator-info { font-weight: 500; color: var(--text-color); }
+.app-footer .creator-info a {
+    color: var(--dynamic-primary, var(--primary-color));
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px dashed var(--dynamic-primary, var(--primary-color));
+    transition: color 0.2s ease, border-bottom-color 0.2s ease;
+}
+.app-footer .creator-info a:hover {
+    color: var(--dynamic-secondary, var(--secondary-color));
+    border-bottom-color: var(--dynamic-secondary, var(--secondary-color));
+    text-decoration: none;
+}
+.app-footer .creator-bio { font-size: 0.9em; opacity: 0.8; margin-top: 8px; }
+.app-footer .footer-divider {
+    border: none; height: 1px; background-color: var(--border-color);
+    opacity: 0.5; margin: 15px auto; width: 50%;
+}
+.app-footer .tech-info { font-size: 0.85em; opacity: 0.7; }
+
+
+/* --- Controls Styling --- */
+.control-panel h2 {
+    color: var(--dynamic-primary, #212529); /* Use dynamic color but fallback to dark */
+    margin-bottom: 15px; /* Reduced */
+    display: flex; align-items: center; gap: 8px;
+}
+.control-grid {
+    display: grid; grid-template-columns: 1fr;
+    gap: 18px; /* Reduced */
+}
+.control-group { border: none; padding: 0; margin: 0; }
+.control-group legend {
+    font-weight: 600; color: var(--dynamic-primary, #212529); /* Match H2 fallback */
+    margin-bottom: 10px; font-size: 1.1em; padding: 0 5px; width: auto;
+}
+
+
+/* --- Collapsible Sections (Instructions, Photobooth, Params) --- */
+.collapsible-section {
+    border: 1px solid var(--card-border-color); /* Match card border */
+    border-radius: var(--border-radius);
+    margin-bottom: 18px; /* Consistent reduced margin */
+    background-color: rgba(248, 249, 250, 0.8); /* Slight transparency */
+    overflow: hidden; /* Helps with animations if added */
+}
+/* Remove margin from last element inside grid */
+.control-grid > *:last-child {
+     margin-bottom: 0;
+}
+.control-grid > *:last-child .collapsible-section {
+     margin-bottom: 0; /* Specifically target collapsible if it's last */
+}
+
+.collapsible-section summary {
+    padding: 10px 15px; /* Slightly smaller padding */
+    font-weight: 600;
+    color: var(--dynamic-primary, var(--primary-color));
+    cursor: pointer;
+    outline: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid transparent; /* Start transparent */
+    list-style: none; /* Remove default marker */
+}
+.collapsible-section summary::-webkit-details-marker { display: none; } /* Hide marker in Chrome/Safari */
+.collapsible-section summary:hover { background-color: rgba(0,0,0,0.03); }
+.collapsible-section summary .toggle-icon {
+    transition: transform var(--transition-curve-bounce) 0.4s; /* Use bounce curve */
+    font-size: 0.9em; opacity: 0.7; margin-left: 10px;
+}
+/* Rotate arrow when details element is open */
+.collapsible-section[open] > summary .toggle-icon { transform: rotate(180deg); }
+.collapsible-section[open] > summary { border-bottom-color: var(--card-border-color); } /* Show border only when open */
+
+/* Content wrapper inside details */
+.collapsible-content {
+    padding: 15px; /* Add padding to the content wrapper */
+    border-top: 1px solid var(--card-border-color); /* Separator */
+    /* Consider adding open/close animation later if needed */
+}
+/* Adjust nested containers if needed */
+.params-details .collapsible-content { padding: 0; border-top: none; } /* Params container has its own padding/border */
+.params-details .effect-params-container { margin-top: 0; border: none; background: none; padding: 15px; border-top: 1px solid var(--card-border-color);}
+.photobooth-details .collapsible-content { padding: 15px 10px; } /* Adjust photobooth padding */
+
+
+/* Instructions Content Styling (within .collapsible-content) */
+.instructions-content { padding: 15px 20px; font-size: 0.95em; line-height: 1.6; }
+.instructions-content h4 { font-size: 1.1em; color: var(--dynamic-secondary, var(--secondary-color)); margin-top: 15px; margin-bottom: 8px; border-bottom: none; display: flex; align-items: center; gap: 8px; }
+.instructions-content h4:first-child { margin-top: 0; }
+.instructions-content ul { list-style: none; padding-left: 5px; margin-bottom: 15px; }
+.instructions-content li { margin-bottom: 8px; padding-left: 20px; position: relative; }
+.instructions-content li::before { content: '•'; position: absolute; left: 5px; top: -1px; color: var(--dynamic-accent, var(--accent-color)); font-size: 1.2em; line-height: 1; }
+.instructions-content p { margin-bottom: 10px; }
+.instructions-content i.fas { width: 1.2em; text-align: center; margin-right: 3px; margin-left: 1px; opacity: 0.9; color: var(--dynamic-primary, var(--primary-color)); vertical-align: middle; }
+/* Specific instruction icon colors */
+.instructions-content .fa-upload { color: #007bff; } .instructions-content .fa-video, .instructions-content .fa-camera, .instructions-content .fa-video-slash { color: #6f42c1; } .instructions-content .fa-edit { color: #ffc107; } .instructions-content .fa-mouse-pointer, .instructions-content .fa-pencil-alt, .instructions-content .fa-font { color: #6c757d; } .instructions-content .fa-trash-alt { color: #dc3545; } .instructions-content .fa-eraser { color: #fd7e14; } .instructions-content .fa-photo-film { color: #e83e8c; } .instructions-content .fa-magic { color: #20c997; } .instructions-content .fa-download { color: #28a745; } .instructions-content .fa-info-circle { color: inherit; }
+.instructions-content strong i, .instructions-content li::before { opacity: 1.0; color: inherit; }
+.instructions-content strong { font-weight: 600; }
+.instructions-content em { font-style: italic; color: var(--muted-text-color); display: block; text-align: center; margin-top: 15px; }
+
+
+/* Input Methods & Basic Controls */
+.input-method { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.input-or { color: var(--muted-text-color); font-weight: bold; margin: 5px 0; }
+.webcam-controls { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+
+button, .button-like {
+    background-color: var(--dynamic-primary); color: white; padding: 10px 18px; border: 1px solid transparent;
+    border-radius: var(--border-radius); cursor: pointer; transition: all var(--transition-curve-smooth) 0.3s;
+    box-shadow: var(--box-shadow-base); font-size: 0.95em; font-weight: 500; text-align: center; text-decoration: none;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden;
+}
+button:hover, .button-like:hover { background-color: var(--dynamic-secondary); transform: translateY(-2px) scale(1.02); box-shadow: var(--box-shadow-lifted); border-color: rgba(255, 255, 255, 0.2); }
+button:active, .button-like:active { transform: translateY(0px) scale(0.98); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+button:disabled, .button-like:disabled { background-color: #adb5bd; cursor: not-allowed; box-shadow: none; transform: none; opacity: 0.65; pointer-events: none; }
+
+.file-upload-label { display: inline-flex; width: auto; background-color: var(--dynamic-secondary); }
+.file-upload-label:hover { background-color: var(--dynamic-primary); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
+
+/* Select Dropdown */
+.select-wrapper { position: relative; width: 100%; }
+select {
+    appearance: none; -webkit-appearance: none; -moz-appearance: none; background-color: white; border: 1px solid var(--border-color);
+    border-radius: var(--border-radius); padding: 10px 30px 10px 12px; font-size: 0.95em; width: 100%; cursor: pointer;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+select:hover { border-color: var(--dynamic-secondary); }
+/* Define RGB versions of dynamic colors for box-shadow */
+:root { --dynamic-primary-rgb: 106, 17, 203; /* Default Purple RGB */ }
+body.effect-category-filter { --dynamic-primary-rgb: 74, 74, 74; } body.effect-category-cv { --dynamic-primary-rgb: 0, 119, 182; } body.effect-category-morphology { --dynamic-primary-rgb: 90, 24, 154; } body.effect-category-ai { --dynamic-primary-rgb: 208, 0, 0; }
+select:focus { border-color: var(--dynamic-primary); outline: none; box-shadow: 0 0 0 3px rgba(var(--dynamic-primary-rgb), 0.25); } /* Use dynamic RGB */
+.dropdown-arrow { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted-text-color); pointer-events: none; transition: transform var(--transition-curve-smooth) 0.3s; }
+select:focus + .dropdown-arrow { transform: translateY(-50%) rotate(180deg); }
+
+/* Effect Parameters */
+.effect-params-container { background-color: rgba(0, 0, 0, 0.03); border: 1px dashed var(--border-color); border-radius: var(--border-radius); padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+/* Remove margin/border when inside details */
+.params-details .effect-params-container { margin-top: 0; border: none; background: none; padding: 0; }
+
+.param-item { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.param-item label { font-size: 0.9em; font-weight: 500; color: #5a5a5a; flex-basis: 120px; flex-shrink: 0; }
+.param-item input[type="range"], .param-item input[type="number"], .param-item input[type="text"], .param-item input[type="color"], .param-item input[type="file"], .param-item select { flex-grow: 1; min-width: 100px; padding: 8px 10px; border-radius: var(--border-radius); border: 1px solid var(--border-color); font-size: 0.9em; transition: border-color 0.3s ease, box-shadow 0.3s ease; }
+.param-item input[type="range"] { padding: 0; cursor: pointer; accent-color: var(--dynamic-accent); transition: accent-color var(--transition-speed) ease; }
+.param-item input[type="color"] { padding: 2px; height: 36px; }
+.param-item input[type="checkbox"] { flex-grow: 0; width: auto; }
+.param-item input:hover, .param-item select:hover { border-color: var(--dynamic-secondary); }
+.param-item input:focus, .param-item select:focus { border-color: var(--dynamic-primary); outline: none; box-shadow: 0 0 0 3px rgba(var(--dynamic-primary-rgb), 0.2); }
+.param-value { font-size: 0.9em; font-weight: 600; color: var(--dynamic-primary); min-width: 25px; text-align: right; }
+.param-hint { font-size: 0.8em; color: #5a5a5a; flex-basis: 100%; margin-top: -5px; padding-left: 5px; }
+
+/* Main Action Button States */
+@keyframes pulse { 0% { transform: scale(1); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); } 50% { transform: scale(1.03); box-shadow: 0 6px 15px rgba(40, 167, 69, 0.4); } 100% { transform: scale(1); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); } }
+.main-action-button { transition: background-color var(--transition-speed) ease, transform 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease; opacity: 0.7; }
+.main-action-button.ready-to-apply { background-color: var(--success-color); font-weight: bold; opacity: 1.0; animation: pulse 2.5s infinite ease-in-out; }
+.main-action-button.ready-to-apply:hover { background-color: #218838; animation-play-state: paused; }
+.main-action-button.loading { pointer-events: none; opacity: 1.0; color: transparent; animation: none; background-color: var(--muted-text-color); }
+.main-action-button.loading i, .main-action-button.loading span { visibility: hidden; }
+.main-action-button .spinner.small { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; border-width: 3px; border-color: rgba(255, 255, 255, 0.3); border-top-color: #ffffff; z-index: 2; animation: spin 0.8s linear infinite; }
+
+/* --- Canvas Area --- */
+/* .canvas-area defined earlier with flex */
+
+.canvas-container h3 { margin-bottom: 15px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; color: #212529; flex-shrink: 0; /* Prevent shrinking */ }
+
+/* .canvas-wrapper defined earlier with flex-grow */
+
+.canvas-wrapper canvas { display: block; max-width: 100%; max-height: 100%; /* Allow canvas to fit wrapper */ height: auto; object-fit: contain; }
+.placeholder-text { color: rgba(0,0,0,0.5); font-size: 1.1em; text-align: center; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 10px; transition: opacity var(--transition-speed) ease; }
+.placeholder-text i { font-size: 2.5em; opacity: 0.4; }
+.canvas-wrapper.has-content .placeholder-text { opacity: 0; pointer-events: none; }
+
+/* Fabric.js Controls */
+.fabric-controls { margin-bottom: 15px; padding: 10px; background-color: rgba(248, 249, 250, 0.8); border-radius: var(--border-radius); display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; border: 1px solid var(--card-border-color); flex-shrink: 0; /* Prevent shrinking */ }
+.fabric-tool-btn { background-color: #e9ecef; color: var(--text-color); padding: 8px 12px; font-size: 0.9em; box-shadow: none; min-width: 40px; border: 1px solid #ced4da; transition: all 0.2s ease; }
+.fabric-tool-btn:hover { background-color: #ced4da; transform: scale(1.05); }
+.fabric-tool-btn.active { background-color: var(--dynamic-primary); color: white; border-color: var(--dynamic-primary); box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); transform: scale(1.0); }
+.fabric-tool-btn.danger { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb;} .fabric-tool-btn.danger:hover { background-color: #f5c6cb; }
+.fabric-tool-btn.warning { background-color: #fff3cd; color: #856404; border-color: #ffeeba;} .fabric-tool-btn.warning:hover { background-color: #ffeeba; }
+.fabric-controls input[type="color"] { padding: 0; width: 36px; height: 36px; border: 1px solid var(--border-color); border-radius: 50%; cursor: pointer; vertical-align: middle; transition: border-color var(--transition-speed) ease, transform 0.2s ease; -webkit-appearance: none; -moz-appearance: none; appearance: none; background: none; }
+.fabric-controls input[type="color"]:hover { transform: scale(1.1); }
+.fabric-controls input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; } .fabric-controls input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; box-shadow: inset 0 0 3px rgba(0,0,0,0.2); } .fabric-controls input[type="color"]::-moz-color-swatch { border: none; border-radius: 50%; box-shadow: inset 0 0 3px rgba(0,0,0,0.2); }
+.fabric-controls input[type="range"] { width: 100px; height: 8px; vertical-align: middle; cursor: pointer; accent-color: var(--dynamic-primary); }
+.range-value { font-size: 0.9em; font-weight: 600; color: var(--dynamic-primary); min-width: 20px; text-align: right; }
+
+/* Results Display */
+.results-display { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-top: auto; /* Push download button down */ padding-top: 10px; flex-shrink: 0; /* Prevent shrinking */ }
+.loading-indicator { display: flex; align-items: center; justify-content: center; font-weight: 500; color: var(--dynamic-primary); padding: 10px; background-color: rgba(var(--dynamic-primary-rgb), 0.05); border-radius: var(--border-radius); width: 100%; gap: 10px; }
+.spinner { border: 4px solid rgba(var(--dynamic-primary-rgb), 0.2); border-radius: 50%; border-top-color: var(--dynamic-primary); width: 24px; height: 24px; animation: spin 1s ease-in-out infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.processing-time { font-size: 0.9em; color: #5a5a5a; }
+.download-button { background-color: var(--dynamic-accent); color: var(--text-color); font-weight: bold; width: auto; }
+.download-button:hover { background-color: color-mix(in srgb, var(--dynamic-accent), #000000 15%); }
+
+/* --- Webcam Area --- */
+#webcam_area { margin-top: 15px; }
+#webcam-wrapper { background-color: #000; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 5px; display: flex; justify-content: center; align-items: center; max-width: 330px; margin: 0 auto; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+#webcam_video { display: block; max-width: 100%; height: auto; border-radius: calc(var(--border-radius) / 2); }
+
+/* --- Photobooth Styling --- */
+.photobooth-details summary { font-size: 0.95em; } /* Different summary text size */
+.photobooth-details .collapsible-content { padding: 15px 10px; } /* Specific padding */
+.photobooth-options { background-color: rgba(0,0,0,0.02); border: 1px dashed var(--border-color); border-radius: var(--border-radius); padding: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 15px; }
+.photobooth-options .param-item { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.photobooth-options .param-item label { font-size: 0.9em; font-weight: 500; color: #5a5a5a; flex-basis: 60px; flex-shrink: 0; }
+.photobooth-options .param-item .select-wrapper { flex-grow: 1; }
+.photobooth-options .param-item input[type="checkbox"] { flex-grow: 0; width: auto; margin-right: 5px; }
+.photobooth-options .param-item label[for="photobooth_gif"] { flex-basis: auto; }
+
+.photobooth-button { background-color: var(--dynamic-accent); color: var(--text-color); font-weight: bold; width: 100%; }
+.photobooth-button:hover { background-color: color-mix(in srgb, var(--dynamic-accent), #000000 15%); }
+.photobooth-button:disabled { background-color: color-mix(in srgb, var(--dynamic-accent), #ffffff 50%); color: rgba(0,0,0,0.4); cursor: not-allowed; }
+
+.photobooth-active-controls { margin-top: 15px; text-align: center; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 15px; background-color: rgba(248, 249, 250, 0.8); }
+.photobooth-status-display { font-weight: 500; color: var(--dynamic-primary, var(--primary-color)); margin-bottom: 15px; font-size: 1.1em; min-height: 1.3em; transition: color var(--transition-speed) ease; }
+.photobooth-countdown-timer { position: relative; width: 100px; height: 100px; margin: 0 auto 15px auto; }
+.photobooth-countdown-timer svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+.photobooth-countdown-timer .timer-bg { fill: none; stroke: rgba(0,0,0,0.1); stroke-width: 8; }
+.photobooth-countdown-timer .timer-progress { fill: none; stroke: var(--dynamic-accent, var(--accent-color)); stroke-width: 8; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 283; transition: stroke-dashoffset 1s linear, stroke var(--transition-speed) ease; }
+.photobooth-countdown-timer .timer-text { position: absolute; width: 100%; height: 100%; top: 0; display: flex; align-items: center; justify-content: center; font-size: 2.5em; font-weight: bold; color: var(--dynamic-primary, var(--primary-color)); transition: color var(--transition-speed) ease, transform 0.2s ease; }
+.photobooth-capture-flash .timer-text { transform: scale(1.2); color: var(--dynamic-accent, var(--accent-color)); animation: flash 0.4s ease; }
+@keyframes flash { 0%, 100% { opacity: 1; transform: scale(1.2); } 50% { opacity: 0.5; transform: scale(1.1); } }
+#photobooth_snapshot_preview { margin-top: 15px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; min-height: 50px; }
+#photobooth_snapshot_preview img { max-width: 70px; height: auto; border: 2px solid var(--border-color); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); opacity: 0; transition: opacity 0.5s ease, transform 0.3s ease; }
+#photobooth_snapshot_preview img.loaded { opacity: 1.0; transform: scale(1.0); }
+#photobooth_snapshot_preview img:hover { transform: scale(1.1); z-index: 5; }
+#cancel_photobooth { background-color: var(--danger-color); }
+#cancel_photobooth:hover { background-color: color-mix(in srgb, var(--danger-color), #000000 15%); }
+
+/* --- Error Message Styling --- */
+.error-message { background-color: rgba(220, 53, 69, 0.8); color: white; border: 1px solid rgba(220, 53, 69, 0.9); border-left: 5px solid #a0202d; padding: 15px; margin-top: 20px; border-radius: var(--border-radius); font-weight: 500; font-size: 0.95em; transition: opacity var(--transition-speed) ease; box-shadow: var(--box-shadow-base); }
+
+/* --- Dynamic Theme Styles --- */
+body.effect-category-none { --dynamic-primary: var(--primary-color); --dynamic-secondary: var(--secondary-color); --dynamic-accent: var(--accent-color); --dynamic-primary-rgb: 106, 17, 203; --dynamic-card-bg-filter: none; --dynamic-header-gradient: linear-gradient(to right, var(--dynamic-primary), var(--dynamic-secondary)); }
+body.effect-category-filter { --dynamic-primary: #4a4a4a; --dynamic-secondary: #888888; --dynamic-accent: #fdb827; --dynamic-primary-rgb: 74, 74, 74; --dynamic-card-bg-filter: saturate(80%) brightness(98%); --dynamic-header-gradient: linear-gradient(to right, var(--dynamic-primary), var(--dynamic-secondary)); }
+body.effect-category-filter .control-panel { border-color: #c5c5c5; }
+body.effect-category-cv { --dynamic-primary: #0077b6; --dynamic-secondary: #00b4d8; --dynamic-accent: #90e0ef; --dynamic-primary-rgb: 0, 119, 182; --dynamic-card-bg-filter: none; --dynamic-header-gradient: linear-gradient(to right, #0077b6, #00b4d8, #90e0ef); }
+body.effect-category-cv .control-panel { border-color: #ade8f4; }
+body.effect-category-morphology { --dynamic-primary: #5a189a; --dynamic-secondary: #9d4edd; --dynamic-accent: #e0aaff; --dynamic-primary-rgb: 90, 24, 154; --dynamic-card-bg-filter: contrast(105%); --dynamic-header-gradient: linear-gradient(to right, var(--dynamic-primary), var(--dynamic-secondary)); }
+body.effect-category-morphology .control-panel { border-color: #c77dff; }
+body.effect-category-ai { --dynamic-primary: #d00000; --dynamic-secondary: #ffba08; --dynamic-accent: #faa307; --dynamic-primary-rgb: 208, 0, 0; --dynamic-card-bg-filter: none; --dynamic-header-gradient: linear-gradient(45deg, #f72585, #b5179e, #7209b7, #3a0ca3, #4361ee, #4cc9f0); }
+body.effect-category-ai .control-panel { border: 1px solid transparent; background-image: linear-gradient(var(--card-bg-color), var(--card-bg-color)), linear-gradient(to right, var(--dynamic-primary), var(--dynamic-secondary)); background-origin: border-box; background-clip: padding-box, border-box; box-shadow: 0 6px 20px rgba(100, 10, 100, 0.15); }
+body.effect-category-ai .control-group legend { background: -webkit-linear-gradient(45deg, var(--dynamic-primary), var(--dynamic-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; border-bottom: none; font-weight: 700; }
+
+/* --- (Optional) tsParticles Canvas Styling --- */
+#particles-js { position: fixed; width: 100%; height: 100%; top: 0; left: 0; z-index: -10; /* Behind ALL content */ }
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 1023px) { /* Updated breakpoint to match where layout changes */
+     .canvas-area { flex-direction: column; } /* Keep column layout on medium/small */
+     .canvas-container { flex-basis: auto; flex-grow: 0; /* Don't grow cards on smaller screens */ }
+     .canvas-wrapper { flex-grow: 0; min-height: 250px; /* Restore min-height for small screens */ }
+     .control-panel { max-width: 100%; max-height: none; overflow-y: visible; }
+     .fabric-controls input[type="range"] { width: 80px; }
+     h1 { font-size: 1.5em; } h2 { font-size: 1.3em; } h3 { font-size: 1.1em; }
+}
+@media (max-width: 767px) {
+    /* Further adjustments if needed */
+}
+@media (max-width: 480px) {
+     body { font-size: 15px; }
+     .main-container { padding: 15px; gap: 15px; } /* Further reduce */
+     .card { padding: 15px; }
+     .app-header { padding: 10px 15px; }
+     .app-header h1 { font-size: 1.3em; } .app-header p { font-size: 0.8em; }
+     button, .button-like { padding: 8px 12px; font-size: 0.9em; gap: 5px;}
+     .fabric-controls { gap: 5px; padding: 8px;}
+     .fabric-tool-btn { padding: 6px 8px; min-width: 35px;}
+     .fabric-controls input[type="color"] { width: 30px; height: 30px;}
+     .instructions-content { padding: 10px 15px; font-size: 0.9em;}
+     .collapsible-section summary { padding: 8px 12px; font-size: 0.95em; }
+     .control-grid { gap: 15px; } /* Further reduce */
+     .collapsible-section { margin-bottom: 15px; }
+     .canvas-wrapper { min-height: 200px; } /* Adjust min-height further */
+}
+
+/* --- Disabled Controls Style --- */
+/* Add a class to the control panel if major JS fails */
+.control-panel.disabled-controls {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Ensure canvas resize works correctly within flex items */
+.canvas-container canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%; /* Allow canvas to scale down */
+    height: auto; /* Maintain aspect ratio */
+    width: auto; /* Maintain aspect ratio */
+    object-fit: contain; /* Ensure it fits within bounds */
+}
