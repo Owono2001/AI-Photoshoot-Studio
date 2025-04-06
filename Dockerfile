@@ -2,7 +2,7 @@
 
 # Use an official Python runtime as a parent image
 # Choose a version compatible with your dependencies (3.10 is often a good choice)
-FROM python:3.10-slim-bullseye
+FROM python:3.10-bullseye
 
 # Set environment variables to prevent Python from writing pyc files to disc
 ENV PYTHONDONTWRITEBYTECODE 1
