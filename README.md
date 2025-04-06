@@ -1,158 +1,176 @@
 # ✨ AI Photoshoot Studio ✨
 
-[![Project Status: In Development](https://img.shields.io/badge/status-in%20development-yellow?style=for-the-badge)](https://github.com/Owono2001/AI-Photoshoot-Studio) <!-- Replace with your actual repo link later -->
-[![License: Proprietary (Under Development)](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](./LICENSE)
+[![Project Status: Active Development](https://img.shields.io/badge/status-active%20development-yellowgreen?style=for-the-badge)](https://github.com/Owono2001/AI-Photoshoot-Studio) <!-- TODO: Replace with your FINAL repo link -->
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](./LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.x-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/Flask-Web%20Framework-green?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![Flask](https://img.shields.io/badge/Flask-Web%20Framework-lightgrey?style=for-the-badge&logo=flask&logoColor=black)](https://flask.palletsprojects.com/)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![Fabric.js](https://img.shields.io/badge/Fabric.js-Canvas%20Magic-orange?style=for-the-badge)](http://fabricjs.com/)
 [![OpenCV](https://img.shields.io/badge/OpenCV-Image%20Processing-blueviolet?style=for-the-badge&logo=opencv&logoColor=white)](https://opencv.org/)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-AI%20Power-orange?style=for-the-badge&logo=tensorflow&logoColor=white)](https://www.tensorflow.org/)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-AI%20Power-ff6f00?style=for-the-badge&logo=tensorflow&logoColor=white)](https://www.tensorflow.org/)
 [![MediaPipe](https://img.shields.io/badge/MediaPipe-Vision%20AI-green?style=for-the-badge&logo=google&logoColor=white)](https://developers.google.com/mediapipe)
 
-<!-- Optional: Add a captivating screenshot or GIF here! -->
-<!-- ![AI Photoshoot Studio Demo](path/to/your/screenshot_or_demo.gif) -->
+---
 
-Welcome to the AI Photoshoot Studio – a cutting-edge web application designed to revolutionize your image creation process. This platform seamlessly integrates live webcam capture, intuitive canvas editing, a fun photobooth experience, and a powerful suite of backend image processing effects, including advanced AI-driven transformations like virtual backgrounds and artistic style transfer.
+## 🎬 Take a Sneak Peek!
 
-Built with a modern tech stack featuring Flask, OpenCV, TensorFlow, MediaPipe, and Fabric.js, this studio provides a dynamic and visually engaging environment for users to unleash their creativity.
+Curious about what the AI Photoshoot Studio can do? Watch this quick animated tour showcasing image uploads, webcam captures, AI style transfer, photobooth fun, and more!
+
+<p align="center">
+  <img src="static/assets/demo.gif" alt="AI Photoshoot Studio Animated Demo" width="80%">
+  <br>
+  <em>(Animated GIF Showcase - loading may take a moment)</em>
+</p>
+
+---
+
+Welcome to the **AI Photoshoot Studio** – your creative hub for transforming images! This cutting-edge web application seamlessly blends live webcam interaction, intuitive canvas editing tools, a playful photobooth feature, and a powerful suite of backend image effects, including sophisticated AI magic like virtual backgrounds and artistic style transfer.
+
+Powered by a robust stack featuring Python, Flask, OpenCV, TensorFlow, MediaPipe, and Fabric.js, the studio offers a dynamic and engaging playground to unleash your visual creativity.
 
 ---
 
 ## 🚀 Key Features
 
-*   🖼️ **Multiple Input Methods:** Upload images (PNG, JPG, WEBP) or capture snapshots directly from your webcam.
-*   🎨 **Interactive Canvas Editor:** Powered by Fabric.js, edit your source image with tools like:
-    *   **Free Drawing:** Sketch directly on the canvas with adjustable color and brush width.
-    *   **Text Addition:** Add customizable text elements.
-    *   **Object Manipulation:** Select, move, and delete drawings or text.
-    *   **Clear Edits:** Easily remove annotations while keeping the base image.
-*   📸 **Photobooth Fun:**
-    *   Activate your webcam and start a multi-shot sequence.
-    *   Choose between different layouts (e.g., Vertical Strip, 2x2 Grid).
-    *   Select the number of shots (3, 4, or 6).
-    *   Optionally generate an animated GIF from the captures!
-    *   Visual countdown timer and preview of taken shots.
-*   ✨ **Powerful Backend Effects:** Apply a diverse range of effects processed server-side:
-    *   **Filters:** Grayscale, Sepia, Invert, Gaussian Blur.
-    *   **Computer Vision (CV):** Canny Edge Detection, Pencil Sketch, Contour Finding, ORB Feature Detection.
-    *   **Morphological Operations:** Erode, Dilate.
-    *   **AI - Virtual Background (MediaPipe):** Replace your background with blur, a solid color, or a custom uploaded image.
-    *   **AI - Style Transfer (TensorFlow Hub):** Transfer the artistic style from famous artworks (or your own uploaded style image) onto your photo.
-*   💡 **Dynamic UI & Theming:**
-    *   The interface adapts based on the selected effect category, changing color schemes and accents.
-    *   Real-time parameter adjustments for effects.
-    *   Collapsible sections for cleaner navigation.
-    *   Loading indicators and clear error messaging.
-    *   (Optional) Subtle animated particle background using tsParticles.
-*   📱 **Responsive Design:** Crafted to provide a seamless experience across various screen sizes, from desktops to mobile devices.
-*   💾 **Easy Download:** Download your final creation with a single click.
+*   🖼️ **Versatile Inputs:** Upload images (PNG, JPG, WEBP) or snap photos directly using your webcam.
+*   🎨 **Interactive Canvas Editor (Fabric.js):**
+    *   **Freehand Drawing:** Sketch with adjustable colors and brush sizes.
+    *   **Text Overlay:** Add and customize text elements.
+    *   **Object Control:** Select, move, and delete annotations easily.
+    *   **Clean Slate:** Remove edits without losing your original image.
+*   📸 **Photobooth Extravaganza:**
+    *   Turn on your webcam for a multi-shot photo session.
+    *   Choose layouts: Vertical Strip or 2x2 Grid.
+    *   Select 3, 4, or 6 shots per session.
+    *   Generate an animated GIF keepsake!
+    *   Enjoy a visual countdown and preview thumbnails.
+*   ✨ **Backend Effects Powerhouse:**
+    *   **Classic Filters:** Grayscale, Sepia, Invert, Gaussian Blur.
+    *   **Computer Vision Magic (OpenCV):** Canny Edges, Pencil Sketch Effect, Contour Outlines, ORB Feature Points.
+    *   **Morphological Ops:** Erode & Dilate effects.
+    *   **AI Backgrounds (MediaPipe):** Instantly swap your background with blur, a solid color, or a custom image.
+    *   **AI Artistry (TensorFlow Hub):** Apply the style of famous artworks (or your own!) onto your photos.
+*   💡 **Smart & Dynamic UI:**
+    *   Interface themes adapt visually based on the chosen effect category.
+    *   Adjust effect parameters in real-time.
+    *   Neatly organized controls within collapsible sections.
+    *   Clear loading indicators and helpful error messages.
+    *   (Optional) Elegant animated particle background (tsParticles).
+*   📱 **Responsive Across Devices:** Designed for a smooth experience on desktops, tablets, and smartphones.
+*   💾 **One-Click Download:** Easily save your final masterpiece.
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Technology Stack
 
 *   **Backend:** Python, Flask, Flask-Session
 *   **Image Processing:** OpenCV, Pillow
-*   **AI / Machine Learning:** TensorFlow, TensorFlow Hub, MediaPipe
-*   **Frontend:** HTML5, CSS3 (with Variables, Gradients, Animations), JavaScript (ES6+)
-*   **Canvas Interaction:** Fabric.js
-*   **Particles (Optional):** tsParticles
+*   **AI / ML:** TensorFlow, TensorFlow Hub, MediaPipe
+*   **Frontend:** HTML5, CSS3 (Variables, Gradients, Animations), JavaScript (ES6+)
+*   **Canvas:** Fabric.js
+*   **Particles (Opt):** tsParticles
 *   **Icons:** Font Awesome
-*   **Environment Management:** python-dotenv
-*   **Version Control:** Git, GitHub
+*   **Config:** python-dotenv
+*   **VCS:** Git, GitHub
 
 ---
 
 ## ⚙️ Getting Started
 
-Follow these steps to set up and run the AI Photoshoot Studio locally.
+Ready to run the studio locally? Follow these steps.
 
 ### Prerequisites
 
-*   **Python:** Version 3.8 or higher. ([Download Python](https://www.python.org/downloads/))
-*   **pip:** Python package installer (usually comes with Python).
-*   **Git:** Version control system. ([Download Git](https://git-scm.com/downloads))
-*   **(Optional but Recommended) Virtual Environment:** Tools like `venv` or `conda` to isolate project dependencies.
-*   **C++ Build Tools:** May be required by some dependencies (like `dlib` if used indirectly, or for building `tensorflow` / `opencv` from source if needed, though pre-built wheels usually work). Check your OS documentation (e.g., Build Tools for Visual Studio on Windows, `build-essential` on Debian/Ubuntu).
+*   **Python:** 3.8+ ([Download](https://www.python.org/downloads/))
+*   **pip:** Python package manager (usually included with Python)
+*   **Git:** Version control ([Download](https://git-scm.com/downloads))
+*   **(Recommended) Virtual Environment:** `venv` or `conda`
+*   **C++ Build Tools:** Potentially needed for some dependencies (check OS specifics: e.g., Build Tools for Visual Studio [Win], `build-essential` [Debian/Ubuntu]).
 
 ### Installation
 
-1.  **Clone the Repository:**
+1.  **Clone the Repo:**
     ```bash
-    git clone https://github.com/Owono2001/AI-Photoshoot-Studio.git # Replace with your actual repo link later
+    git clone https://github.com/Owono2001/AI-Photoshoot-Studio.git # TODO: Replace with your FINAL repo link
     cd AI-Photoshoot-Studio
     ```
 
-2.  **Create and Activate a Virtual Environment (Recommended):**
+2.  **Setup Virtual Environment (Recommended):**
     ```bash
-    # Using venv (built-in)
+    # Using venv
     python -m venv venv
-    # Windows
-    .\venv\Scripts\activate
-    # macOS/Linux
-    source venv/bin/activate
+    # Activate:
+    # Windows: .\venv\Scripts\activate
+    # macOS/Linux: source venv/bin/activate
     ```
 
 3.  **Install Dependencies:**
-    Make sure you have a `requirements.txt` file (see below if you don't). Then run:
     ```bash
     pip install -r requirements.txt
     ```
-    *Note: Installing TensorFlow and OpenCV can sometimes be tricky depending on your OS and hardware (CPU/GPU). Refer to their official installation guides if you encounter issues.*
+    *(Note: TensorFlow/OpenCV installation can vary. Check their official docs if issues arise.)*
 
-4.  **Set Up Environment Variables:**
-    Create a file named `.env` in the project root directory. Add the following line, replacing the value with your own strong, random secret key:
+4.  **Configure Environment:**
+    Create a `.env` file in the root directory with your secret key:
     ```env
     # .env
-    FLASK_SECRET_KEY='YOUR_VERY_STRONG_AND_SECRET_KEY_HERE_f9a3b1...'
-    # Optional: Specify a different Style Transfer Model URL
-    # STYLE_TRANSFER_MODEL_URL='https://tfhub.dev/google/magenta/arbitrary-image-stylization-v1-256/2'
-    # Optional: Configure Flask run settings (defaults are 127.0.0.1:5000, debug=False)
-    # FLASK_RUN_HOST='0.0.0.0' # To make accessible on local network
-    # FLASK_RUN_PORT=8080
-    # FLASK_DEBUG='True' # Enable debug mode for development ONLY
-    ```
-    **Important:** The `FLASK_SECRET_KEY` is crucial for session security. Keep it secret!
+    FLASK_SECRET_KEY='REPLACE_WITH_YOUR_OWN_VERY_STRONG_SECRET_KEY_f9a3b1...'
 
-5.  **(If needed) Create `requirements.txt`:**
-    If you don't have this file, you can generate it based on the imports in `app.py`. A likely list is:
+    # Optional overrides for Flask settings:
+    # FLASK_RUN_HOST='0.0.0.0' # Accessible on local network
+    # FLASK_RUN_PORT=8080
+    # FLASK_DEBUG='True' # Development ONLY - Never use in production!
+
+    # Optional Style Transfer Model:
+    # STYLE_TRANSFER_MODEL_URL='https://tfhub.dev/google/magenta/arbitrary-image-stylization-v1-256/2'
+    ```
+    **Security:** Your `FLASK_SECRET_KEY` must be kept private!
+
+5.  **(If missing) Generate `requirements.txt`:**
+    Based on `app.py` imports, a likely list is:
     ```txt
     # requirements.txt
-    Flask
-    Flask-Session
-    opencv-python
-    Pillow
-    numpy
-    mediapipe
-    tensorflow
-    tensorflow_hub
-    python-dotenv
-    # Add any other direct dependencies identified
+    Flask>=2.0
+    Flask-Session>=0.4
+    opencv-python>=4.5
+    Pillow>=9.0
+    numpy>=1.20
+    mediapipe>=0.8
+    tensorflow>=2.8 # Or tensorflow-cpu
+    tensorflow_hub>=0.12
+    python-dotenv>=0.19
+    # Add any other direct dependencies
     ```
+    *(Consider adding version specifiers for better reproducibility)*
 
-### Running the Application
+### Running the App
 
-1.  **Ensure your virtual environment is activated.**
-2.  **Run the Flask development server:**
+1.  **Activate your virtual environment.**
+2.  **Start the server:**
     ```bash
     python app.py
     ```
-3.  **Open your web browser** and navigate to the address shown in the terminal (usually `http://127.0.0.1:5000/`).
+3.  **Visit:** Open your browser to the URL provided (typically `http://127.0.0.1:5000/`).
 
 ---
 
-## 📖 Usage
+## 📖 How to Use
 
-1.  **Load an Image:** Either click "Upload File" to select an image from your device or click "Start Webcam", grant permission, and then "Capture Frame".
-2.  **(Optional) Edit:** Use the tools above the "Source Editor" canvas (Select, Draw, Text, Delete, Clear Edits) to modify your source image.
-3.  **(Optional) Photobooth:** If the webcam is active, configure layout/shots/GIF options under "Photobooth Fun!", click "Start Photobooth", and follow the countdowns.
-4.  **Choose an Effect:** Select the desired effect from the "Choose Effect" dropdown.
-5.  **Adjust Parameters:** If parameters appear under "Adjust Parameters", tweak them to your liking. (Note: For AI effects like VBG or Style Transfer, you might need to upload an additional background or style image).
-6.  **Apply Effect:** Click the "Apply Backend Effect" button. Wait for the processing (AI effects can take longer).
-7.  **View & Download:** The processed image will appear in the "Processed Result" box. Click "Download Result" to save it.
+1.  **Get Your Image:** Use "Upload File" or "Start Webcam" followed by "Capture Frame".
+2.  **Edit (Optional):** Use the tools (Select, Draw, Text, Delete, Clear) above the "Source Editor".
+3.  **Try Photobooth (Optional):** With the webcam active, find "Photobooth Fun!", set options, click "Start Photobooth", and smile!
+4.  **Select Effect:** Choose from the "Choose Effect" dropdown.
+5.  **Tune Parameters:** Adjust settings under "Adjust Parameters" if they appear. (AI effects might need extra uploads like background/style images).
+6.  **Apply Magic:** Hit "Apply Backend Effect" and wait for the transformation.
+7.  **Save:** See the result in the "Processed Result" area and click "Download Result".
 
-*(Refer to the "How to Use This App" section within the application itself for detailed, step-by-step guidance with icons!)*
+*(Tip: The "How to Use This App" section inside the application provides illustrated steps!)*
+
+---
+
+## 🤝 Contributing
+
+This project is currently under active development by the author. While contributions are not formally open at this moment, suggestions and feedback are welcome! Please feel free to open an issue on GitHub to report bugs or propose new features.
 
 ---
 
@@ -162,21 +180,19 @@ Follow these steps to set up and run the AI Photoshoot Studio locally.
 
 © 2025 Pedro Fabian Owono. All Rights Reserved.
 
-This project is currently under active development and refinement by Pedro Fabian Mange Owono Ondo. As such, the code, assets, and functionalities presented here are **not licensed for reuse, modification, distribution, or deployment** by any other party without explicit written permission from the author.
+This project is a work-in-progress by Pedro Fabian Mange Owono Ondo. The code, assets, and functionalities are **not licensed for reuse, modification, distribution, or deployment** without explicit written permission from the author.
 
-The intention is to further develop and potentially release this project under a different license in the future. Until then, please respect the proprietary nature of this work-in-progress.
-
-For inquiries regarding licensing or collaboration, please contact the author.
+Future releases may adopt a different license. Please respect the current proprietary status. For licensing inquiries or collaboration, contact the author.
 
 ---
 
 ## 🧑‍💻 Author & Contact
 
 *   **Pedro Fabian Mange Owono Ondo**
-*   **GitHub:** [Owono2001](https://github.com/Owono2001)
+*   **GitHub:** [Owono2001](https://github.com/Owono2001) <!-- TODO: Replace with your FINAL repo link -->
 *   **Email:** [owonoondomangue@gmail.com](mailto:owonoondomangue@gmail.com)
 *   **Portfolio:** [https://owono2001.github.io/MyPortfolio/](https://owono2001.github.io/MyPortfolio/)
 
 ---
 
-Feel free to explore the code, and stay tuned for updates!
+Thanks for checking out the AI Photoshoot Studio! Stay tuned for more updates.

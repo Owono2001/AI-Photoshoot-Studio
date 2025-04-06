@@ -36,6 +36,14 @@
     --transition-curve-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
     --transition-curve-bounce: cubic-bezier(0.68, -0.55, 0.27, 1.55);
 
+
+
+
+    /* Transitions */
+    --transition-speed: 0.4s;
+    --transition-curve-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
+    --transition-curve-bounce: cubic-bezier(0.68, -0.55, 0.27, 1.55);
+
     /* Dynamic Theme Variables (defaults match base theme) */
     --dynamic-primary: var(--primary-color);
     --dynamic-secondary: var(--secondary-color);
@@ -105,23 +113,23 @@ a:hover {
 
 /* --- Layout --- */
 .app-header {
-    background: rgba(0, 0, 0, 0.1); /* Subtle dark transparent */
-    backdrop-filter: blur(5px); /* Glass effect */
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     color: white;
-    padding: 15px 25px; /* More padding */
+    padding: 15px 25px;
     text-align: center;
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    min-height: auto; /* Adjust height based on content */
+    min-height: auto;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    position: sticky; /* Make header sticky */
+    position: sticky; /* Keep sticky */
     top: 0;
-    z-index: 100; /* Ensure header is above particles */
-    transition: background var(--transition-speed) ease; /* Added transition */
-    flex-shrink: 0; /* Prevent header from shrinking */
+    z-index: 100; /* Keep z-index */
+    transition: background var(--transition-speed) ease;
+    flex-shrink: 0; /* ADDED / ENSURED: Prevent header
 }
 .app-header h1 {
     color: #ffffff;
@@ -134,26 +142,28 @@ a:hover {
 
 .main-container {
     display: flex;
-    flex-direction: column; /* Stack controls above canvas on small screens */
-    flex-grow: 1; /* *** THIS IS KEY to make it take available space *** */
-    padding: 20px; /* Reduced */
-    gap: 25px; /* Reduced */
-    z-index: 1; /* Ensure content is above particles */
+    flex-direction: column; /* Default stack (mobile-first) */
+    flex-grow: 1; /* Keep grow */
+    padding: 20px;
+    gap: 25px;
+    z-index: 1;
     position: relative;
-    overflow-y: auto; /* Allow scrolling within main container if needed */
-    min-height: 0; /* Necessary for flex-grow in some contexts */
+    /* overflow-y: auto; /* REMOVED: Prefer internal scrolling first */
+    min-height: 0; /* ADDED / ENSURED: Crucial for flex-grow children */
 }
 
 /* Glassmorphism Card Effect */
 .card {
     background-color: var(--card-bg-color);
     backdrop-filter: blur(var(--card-blur-amount));
-    -webkit-backdrop-filter: blur(var(--card-blur-amount)); /* Safari */
-    border-radius: 12px; /* More rounded */
+    -webkit-backdrop-filter: blur(var(--card-blur-amount));
+    border-radius: 12px;
     box-shadow: var(--box-shadow-lifted);
     border: 1px solid var(--card-border-color);
-    padding: 20px; /* Reduced */
+    padding: 20px; /* Adjusted */
     transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+    /* ADDED: Ensure cards don't shrink in flex layouts unnecessarily */
+    flex-shrink: 0;
 }
 .card:hover {
     box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.22);
@@ -177,32 +187,31 @@ a:hover {
 }
 
 
-/* Responsive Layout */
+/* Responsive Layout - Desktop */
 @media (min-width: 1024px) {
     .main-container {
-        flex-direction: row;
-        align-items: stretch; /* Ensure children stretch vertically */
+        flex-direction: row; /* Side-by-side */
+        align-items: stretch; /* Make children full height */
     }
     .control-panel {
-        flex: 0 0 380px; /* Fixed width for control panel */
-        max-width: 420px;
-        /* height: fit-content; */ /* REMOVED - Allow stretching or use max-height if needed */
-        /* align-self: flex-start; */ /* REMOVED - Allow stretching */
-        height: auto; /* Allow it to grow */
-        max-height: calc(100vh - var(--header-height) - var(--footer-height) - 40px); /* Optional: Prevent excessive height, adjust 40px padding */
-        overflow-y: auto; /* Add scroll if content exceeds height */
+        flex: 0 0 380px; /* Fixed width, don't grow/shrink */
+        max-width: 420px; /* Optional max width */
+        height: auto; /* Let height be determined by content or max-height */
+        /* MODIFIED: Key changes for vertical overflow */
+        max-height: calc(100vh - var(--header-height) - var(--footer-height) - 40px - 40px); /* Max height relative to viewport, accounting for header, footer, and container padding (20px top/bottom = 40px) */
+        overflow-y: auto; /* ADDED: Enable vertical scrolling WITHIN the panel if content exceeds max-height */
+        overflow-x: hidden; /* Prevent horizontal scroll */
+        /* align-self: flex-start; /* REMOVED/Ensure Removed: Allow stretching */
+        min-height: 0; /* ADDED: Flex item safety */
     }
     .canvas-area {
         flex: 1 1 auto; /* Take remaining horizontal space */
         display: flex; /* Use flex for vertical stacking/stretching */
-        flex-direction: column; /* Stack canvas containers vertically */
-        gap: 25px; /* Keep the gap between source/result */
-        min-height: 0; /* Needed for flex children height in some cases */
+        flex-direction: column; /* Stack source/result vertically */
+        gap: 25px;
+        min-height: 0; /* ADDED / ENSURED: Crucial for flex children */
+        align-items: stretch; /* Ensure children (canvas-container) stretch */
     }
-     /* No change needed for this media query block: */
-     /* .canvas-area { flex-direction: row; align-items: flex-start; } */
-     /* This inner row layout is handled below */
-
 }
 @media (min-width: 768px) {
      /* This rule was causing issues on larger screens when main-container became row */
@@ -215,36 +224,38 @@ a:hover {
      /* Keep default column layout for canvas-area for simplicity */
 }
 
-/* Canvas Area and its Children - Ensuring Vertical Stretch */
+/* Canvas Area and its Children */
 .canvas-area {
-    /* Base styles for small screens */
     display: flex;
-    flex-direction: column;
-    gap: 25px; /* Reduced */
+    flex-direction: column; /* Default column layout */
+    gap: 25px;
+    /* Added to ensure it behaves correctly as a flex item */
+    flex-grow: 1; /* Allow it to grow on smaller screens if needed */
+    min-width: 0; /* Flex item safety */
 }
-
 .canvas-container.card {
     display: flex; /* Use flexbox inside the card */
     flex-direction: column; /* Stack title, controls, wrapper vertically */
-    flex-grow: 1; /* *** KEY: Allow card to grow vertically *** */
-    min-height: 0; /* Needed for flex children to size correctly */
+    flex-grow: 1; /* MODIFIED / ENSURED: Allow card to grow vertically */
+    min-height: 0; /* ADDED / ENSURED: Crucial for flex children */
+    /* Ensure padding doesn't prevent growth if needed */
+    padding: 20px;
 }
-
 .canvas-wrapper {
     border: 2px dashed rgba(0,0,0,0.1);
-    margin: 10px auto;
+    margin: 10px auto; /* Keep auto margin for horizontal centering if needed */
     position: relative;
     background-color: rgba(255, 255, 255, 0.3);
-    width: 100%;
-    /* min-height: 250px; */ /* REMOVE fixed min-height */
+    width: 100%; /* Take full width of parent */
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+    overflow: hidden; /* Keep hidden */
     border-radius: calc(var(--border-radius) / 1.5);
     transition: border-color var(--transition-speed) ease;
-    flex-grow: 1; /* *** KEY: Allow canvas wrapper to fill the card *** */
-    min-height: 150px; /* Add a smaller min-height */
+    flex-grow: 1; /* MODIFIED / ENSURED: Allow canvas wrapper to fill the card vertically */
+    min-height: 150px; /* MODIFIED: Reduced min-height, acts as a fallback */
+    /* min-width: 0; /* ADDED: Flex item safety */
 }
 
 
@@ -286,28 +297,29 @@ a:hover {
 
 /* --- Controls Styling --- */
 .control-panel h2 {
-    color: var(--dynamic-primary, #212529); /* Use dynamic color but fallback to dark */
-    margin-bottom: 15px; /* Reduced */
-    display: flex; align-items: center; gap: 8px;
+    /* ... */
+    flex-shrink: 0; /* ADDED: Prevent shrinking if panel width is constrained */
 }
 .control-grid {
     display: grid; grid-template-columns: 1fr;
-    gap: 18px; /* Reduced */
+    gap: 18px;
 }
 .control-group { border: none; padding: 0; margin: 0; }
 .control-group legend {
-    font-weight: 600; color: var(--dynamic-primary, #212529); /* Match H2 fallback */
+    font-weight: 600; color: var(--dynamic-primary, #212529);
     margin-bottom: 10px; font-size: 1.1em; padding: 0 5px; width: auto;
+    flex-shrink: 0; /* ADDED: Prevent shrinking */
 }
 
 
-/* --- Collapsible Sections (Instructions, Photobooth, Params) --- */
+/* --- Collapsible Sections --- */
 .collapsible-section {
-    border: 1px solid var(--card-border-color); /* Match card border */
+    border: 1px solid var(--card-border-color);
     border-radius: var(--border-radius);
-    margin-bottom: 18px; /* Consistent reduced margin */
-    background-color: rgba(248, 249, 250, 0.8); /* Slight transparency */
-    overflow: hidden; /* Helps with animations if added */
+    margin-bottom: 18px;
+    background-color: rgba(248, 249, 250, 0.8);
+    overflow: hidden;
+    flex-shrink: 0; /* ADDED: Prevent section from shrinking weirdly */
 }
 /* Remove margin from last element inside grid */
 .control-grid > *:last-child {
