@@ -1,25 +1,12 @@
-# Python
+# .gitignore
+venv/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
-env/
-venv/
-*.egg-info/
-dist/
-build/
-
-# Flask sessions (if using filesystem type)
-flask_session/
-
-# Temporary files
-uploads/
-generated/
-
-# Environment variables
 .env
-
-# OS generated files
-.DS_Store
-Thumbs.db
+.flask_session/
+uploads/ # Optional: If you don't want uploaded examples in Git
+generated/ # Optional: If you don't want generated examples in Git
+*.DS_Store
