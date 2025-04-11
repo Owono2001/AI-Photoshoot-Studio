@@ -550,25 +550,43 @@ def get_available_effects():
 
 # === PHOTOBOOTH BACKEND LOGIC ===
 
-def compose_photobooth_images(images_pil, layout, num_shots, create_gif=False, bg_color=(255, 255, 255), padding=10):
-    """Composes PIL images into a strip or grid, optionally creating a GIF."""
-    if not images_pil: raise ValueError("No images provided for composition.")
+# Make sure this function definition replaces the previous one entirely
+def compose_photobooth_images(images_pil, layout, num_shots, create_gif=False, bg_color=(255, 255, 255), padding=10, frame_path=None, gif_duration=500):
+    """
+    Composes PIL images, handles different layouts, optionally creates GIF,
+    and applies frame resized to *fit within* dimensions while maintaining aspect ratio.
+    """
+    if not images_pil:
+        raise ValueError("No images provided for composition.")
 
+    images_pil = [img.convert("RGB") for img in images_pil] # Ensure RGB
     first_image = images_pil[0]
     img_width, img_height = first_image.size
     output_format = 'gif' if create_gif else 'png'
+    composed_image = None
 
     if create_gif:
+        # ... (GIF creation logic remains the same - no frame applied here) ...
         output_buffer = BytesIO()
-        frame_duration = 500 # ms per frame
-        images_pil[0].save(
-            output_buffer, format='GIF', save_all=True,
-            append_images=images_pil[1:], duration=frame_duration, loop=0, optimize=False
-        )
+        try:
+            frame_duration = int(gif_duration)
+            if frame_duration < 50: frame_duration = 50
+        except (ValueError, TypeError):
+             frame_duration = 500
+        print(f"Creating GIF with {num_shots} frames, duration={frame_duration}ms")
+        try:
+            images_pil[0].save(
+                output_buffer, format='GIF', save_all=True,
+                append_images=images_pil[1:], duration=frame_duration, loop=0, optimize=False
+            )
+        except Exception as gif_err:
+             print(f"ERROR: Failed to create GIF: {gif_err}")
+             raise RuntimeError(f"GIF creation failed: {gif_err}")
         output_buffer.seek(0)
-        return output_buffer.getvalue(), 'gif' # Return raw GIF bytes
+        return output_buffer.getvalue(), 'gif'
 
     else:
+        # --- Layout Logic (Vertical Strip, Grid, Horizontal - remains the same) ---
         if layout == 'vertical_strip':
             total_width = img_width + 2 * padding
             total_height = (img_height * num_shots) + ((num_shots + 1) * padding)
@@ -577,17 +595,13 @@ def compose_photobooth_images(images_pil, layout, num_shots, create_gif=False, b
             for img in images_pil:
                 composed_image.paste(img, (padding, current_y))
                 current_y += img_height + padding
-            return composed_image, output_format
-
         elif layout == 'grid_2x2':
             cols = 2
             rows = math.ceil(num_shots / cols)
-            if num_shots <= 2: rows, cols = 1, num_shots # Adjust for 1 or 2 shots
-
+            if num_shots <= 2: rows, cols = 1, num_shots
             total_width = (img_width * cols) + ((cols + 1) * padding)
             total_height = (img_height * rows) + ((rows + 1) * padding)
             composed_image = Image.new('RGB', (total_width, total_height), bg_color)
-
             current_x, current_y, img_index = padding, padding, 0
             for r in range(rows):
                 for c in range(cols):
@@ -597,92 +611,283 @@ def compose_photobooth_images(images_pil, layout, num_shots, create_gif=False, b
                     current_x += img_width + padding
                 current_x = padding
                 current_y += img_height + padding
-            return composed_image, output_format
+        elif layout.startswith('horizontal_strip_'):
+            try:
+                expected_n = int(layout.split('_')[-1])
+                n_cols = min(num_shots, expected_n if expected_n > 0 else num_shots)
+                if n_cols == 0: n_cols = num_shots
+            except (ValueError, IndexError):
+                 n_cols = num_shots
+            total_width = (img_width * n_cols) + ((n_cols + 1) * padding)
+            total_height = img_height + 2 * padding
+            composed_image = Image.new('RGB', (total_width, total_height), bg_color)
+            current_x = padding
+            for i in range(n_cols):
+                if i < len(images_pil):
+                    composed_image.paste(images_pil[i], (current_x, padding))
+                    current_x += img_width + padding
+        else: # Fallback
+            print(f"Warning: Unknown layout '{layout}'. Defaulting to vertical strip.")
+            layout = 'vertical_strip'
+            total_width = img_width + 2 * padding
+            total_height = (img_height * num_shots) + ((num_shots + 1) * padding)
+            composed_image = Image.new('RGB', (total_width, total_height), bg_color)
+            current_y = padding
+            for img in images_pil:
+                composed_image.paste(img, (padding, current_y))
+                current_y += img_height + padding
 
-        else: # Fallback to vertical strip
-             print(f"Warning: Unknown layout '{layout}'. Defaulting to vertical strip.")
-             total_width = img_width + 2 * padding
-             total_height = (img_height * num_shots) + ((num_shots + 1) * padding)
-             composed_image = Image.new('RGB', (total_width, total_height), bg_color)
-             current_y = padding
-             for img in images_pil:
-                 composed_image.paste(img, (padding, current_y))
-                 current_y += img_height + padding
-             return composed_image, output_format
+        # --- Frame Application (MODIFIED RESIZING LOGIC) ---
+        if frame_path and os.path.exists(frame_path) and composed_image:
+            try:
+                print(f"Applying frame: {frame_path}")
+                frame_img = Image.open(frame_path).convert("RGBA") # Ensure RGBA
+
+                # Calculate new size to fit frame within composed_image maintaining aspect ratio
+                img_ratio = frame_img.width / frame_img.height
+                target_ratio = composed_image.width / composed_image.height
+                
+                if img_ratio > target_ratio:
+                    # Frame is wider than target area, scale based on width
+                    new_width = composed_image.width
+                    new_height = int(new_width / img_ratio)
+                else:
+                    # Frame is taller or same ratio as target area, scale based on height
+                    new_height = composed_image.height
+                    new_width = int(new_height * img_ratio)
+
+                # Resize frame using LANCZOS for better quality
+                frame_resized = frame_img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+                # Calculate position to center the resized frame
+                paste_x = (composed_image.width - new_width) // 2
+                paste_y = (composed_image.height - new_height) // 2
+
+                # Ensure composed image has alpha channel before pasting transparent frame
+                if composed_image.mode != 'RGBA':
+                     # Create a new RGBA canvas with the original background color
+                     # Or use white/transparent depending on desired background for gaps
+                     # Using bg_color assumes it's an RGB tuple e.g., (255, 255, 255)
+                     rgba_bg_color = bg_color + (255,) # Add full alpha
+                     base_with_alpha = Image.new("RGBA", composed_image.size, rgba_bg_color)
+                     base_with_alpha.paste(composed_image, (0,0)) # Paste original content
+                     composed_image = base_with_alpha
+
+
+                # Paste the resized frame onto the composed image using alpha mask
+                composed_image.paste(frame_resized, (paste_x, paste_y), frame_resized)
+                print(f"Frame resized to {new_width}x{new_height} and applied.")
+                output_format = 'png' # Ensure output is PNG
+
+            except Exception as frame_err:
+                print(f"WARNING: Could not apply frame '{frame_path}': {frame_err}")
+                # Continue without the frame if application fails
+        elif frame_path:
+             if not composed_image: print("Warning: Cannot apply frame as base composed image is missing.")
+             elif not os.path.exists(frame_path): print(f"Warning: Frame path not found: {frame_path}")
+
+
+        if composed_image is None:
+             raise RuntimeError("Image composition failed to produce a result image.")
+
+        return composed_image, output_format
 
 
 @app.route('/photobooth_process', methods=['POST'])
 def handle_photobooth_process():
-    """Handles composing photobooth images based on frontend data."""
-    global photobooths_created # Use the new counter
+    """
+    Handles composing photobooth images based on frontend data, including
+    per-shot effects, frames, and custom GIF duration.
+    """
+    global photobooths_created # Access global counter
     start_req_time = time.time()
-    error_uuid = uuid.uuid4()
+    error_uuid = uuid.uuid4() # Unique ID for tracking this request in logs
+    print(f"--- Photobooth Request ID {error_uuid} Received ---")
 
     try:
-        # Get Parameters
+        # --- Get Parameters from Form Data ---
         layout = request.form.get('layout', 'vertical_strip')
-        num_shots_str = request.form.get('shots', '4')
+        num_shots_str = request.form.get('shots', '4') # Expected number based on frontend setting
         create_gif_str = request.form.get('create_gif', 'false')
         create_gif = create_gif_str.lower() == 'true'
-        num_shots = int(num_shots_str)
+        frame_choice = request.form.get('frame_choice', 'none') # Frame filename or 'none'
+        gif_duration = request.form.get('gif_duration', '500') # GIF frame duration in ms
 
-        # Get Image Data (handle keys like 'captures[0]')
-        capture_keys = sorted([k for k in request.form if k.startswith('captures[')])
-        actual_received = len(capture_keys)
-        if actual_received != num_shots:
-            print(f"Warning: Expected {num_shots} shots, received {actual_received}. Using received count.")
-            num_shots = actual_received
-        if num_shots == 0: raise ValueError("No photobooth captures received.")
+        print(f"Request ID {error_uuid}: Layout='{layout}', GIF={create_gif}, Frame='{frame_choice}', GIF Duration='{gif_duration}'")
 
-        images_pil = []
-        print(f"Decoding {num_shots} photobooth captures...")
-        for key in capture_keys:
-            data_url = request.form.get(key)
-            if data_url:
-                try: images_pil.append(decode_image_from_data_url(data_url))
-                except ValueError as decode_err: print(f"Skipping invalid capture for key {key}: {decode_err}")
-            else: print(f"Warning: Missing data URL for key {key}")
-        if not images_pil: raise ValueError("Failed to decode any valid captures.")
-        num_shots = len(images_pil) # Update based on successful decodes
+        try:
+             num_shots_expected = int(num_shots_str)
+        except ValueError:
+             print(f"Warning (ID: {error_uuid}): Invalid number of expected shots '{num_shots_str}'. Determining from received data.")
+             num_shots_expected = 0 # Will rely on actual data received
 
-        # Compose Images / Create GIF
+        # --- Get Structured Image Data from Form ---
+        # Frontend sends keys like 'captures[0][dataUrl]', 'captures[0][effect]'
+        captures_data = []
+        idx = 0
+        while True:
+            # Check if data for the current index exists
+            data_url_key = f'captures[{idx}][dataUrl]'
+            effect_key = f'captures[{idx}][effect]'
+            if data_url_key in request.form:
+                 data_url = request.form.get(data_url_key)
+                 effect = request.form.get(effect_key, 'none') # Default effect is 'none'
+                 if data_url and data_url.startswith('data:image'):
+                      captures_data.append({'dataUrl': data_url, 'effect': effect})
+                 else:
+                      print(f"Warning (ID: {error_uuid}): Missing or invalid dataUrl for capture index {idx}. Skipping.")
+                 idx += 1
+            else:
+                 # Stop loop when no more captures are found for the next index
+                 break
+
+        actual_received = len(captures_data)
+        if num_shots_expected > 0 and actual_received != num_shots_expected:
+            print(f"Warning (ID: {error_uuid}): Expected {num_shots_expected} shots, but received {actual_received}. Using received count.")
+
+        if actual_received == 0:
+             raise ValueError("No valid photobooth captures received from the frontend.")
+
+        num_shots = actual_received # Use the actual count of valid captures received
+
+        # --- Decode Images and Apply Per-Shot Effects ---
+        images_pil_processed = []
+        print(f"Request ID {error_uuid}: Decoding and processing {num_shots} photobooth captures...")
+        for i, capture in enumerate(captures_data):
+            try:
+                # Decode the base64 Data URL to a PIL Image object
+                img_pil_original = decode_image_from_data_url(capture['dataUrl'])
+                effect_to_apply = capture.get('effect', 'none')
+
+                # Apply simple effect if specified for this shot
+                if effect_to_apply != 'none':
+                    print(f"Request ID {error_uuid}: Applying effect '{effect_to_apply}' to shot {i+1}...")
+                    try:
+                        # Call the existing function for simple effects
+                        # Assuming it takes the image, effect name, and an empty params dict
+                        img_pil_shot_processed = apply_simple_effects(img_pil_original, effect_to_apply, {})
+                        if img_pil_shot_processed:
+                             images_pil_processed.append(img_pil_shot_processed)
+                             print(f"Request ID {error_uuid}: Effect '{effect_to_apply}' applied to shot {i+1}.")
+                        else:
+                             # Handle case where effect function might fail unexpectedly
+                             print(f"Warning (ID: {error_uuid}): Effect '{effect_to_apply}' application returned None for shot {i+1}. Using original.")
+                             images_pil_processed.append(img_pil_original) # Fallback to original
+                    except Exception as effect_err:
+                         print(f"ERROR (ID: {error_uuid}): Applying effect '{effect_to_apply}' to shot {i+1} failed: {effect_err}. Using original.")
+                         images_pil_processed.append(img_pil_original) # Fallback to original
+                else:
+                     # No effect specified for this shot, use the original decoded image
+                     images_pil_processed.append(img_pil_original)
+
+            except ValueError as decode_err:
+                # Handle errors during base64 decoding or Image.open
+                print(f"ERROR (ID: {error_uuid}): Skipping invalid capture at index {i} due to decode error: {decode_err}")
+            except Exception as proc_err:
+                 # Catch any other unexpected errors during this shot's processing
+                 print(f"ERROR (ID: {error_uuid}): Unexpected error processing shot {i}: {proc_err}. Skipping shot.")
+
+
+        # Verify that we still have images after potential decoding/processing errors
+        if not images_pil_processed:
+             raise ValueError("Failed to decode or process any valid captures after attempting effects.")
+        num_shots = len(images_pil_processed) # Update num_shots based on successfully processed images
+        print(f"Request ID {error_uuid}: Successfully processed {num_shots} images.")
+
+        # --- Determine Full Frame Path (if applicable) ---
+        frame_full_path = None
+        if frame_choice != 'none' and not create_gif: # Frames are not applied to GIFs
+             # Construct the potential path to the frame file
+             potential_path = os.path.join(app.static_folder, 'frames', frame_choice)
+             # Basic security check: Ensure filename is just a filename (no path traversal)
+             # and normalize the path to prevent tricks, then check it starts with the expected directory
+             safe_frame_filename = os.path.basename(frame_choice)
+             if safe_frame_filename == frame_choice and frame_choice: # Ensure it's not empty and just a filename
+                 safe_potential_path = os.path.normpath(os.path.join(app.static_folder, 'frames', safe_frame_filename))
+                 expected_base = os.path.normpath(os.path.join(app.static_folder, 'frames'))
+
+                 if safe_potential_path.startswith(expected_base):
+                     if os.path.exists(safe_potential_path):
+                         frame_full_path = safe_potential_path
+                         print(f"Request ID {error_uuid}: Frame found: {frame_full_path}")
+                     else:
+                         print(f"Warning (ID: {error_uuid}): Selected frame '{frame_choice}' not found at '{safe_potential_path}'.")
+                 else:
+                      print(f"Warning (ID: {error_uuid}): Invalid/unsafe frame path prevented: '{frame_choice}'.")
+             else:
+                  print(f"Warning (ID: {error_uuid}): Invalid frame filename format blocked: '{frame_choice}'.")
+
+        # --- Compose Images / Create GIF ---
         start_compose_time = time.time()
         composed_result, output_format = compose_photobooth_images(
-            images_pil, layout, num_shots, create_gif, bg_color=(255, 255, 255), padding=10
+            images_pil=images_pil_processed,    # Use the list of (potentially effect-applied) images
+            layout=layout,
+            num_shots=num_shots,                # Use the count of successfully processed images
+            create_gif=create_gif,
+            bg_color=(255, 255, 255),           # White background default
+            padding=10,                         # Padding between images
+            frame_path=frame_full_path,         # Pass the validated frame path (or None)
+            gif_duration=gif_duration           # Pass the duration string/value from form
         )
         compose_time = time.time() - start_compose_time
-        print(f"Photobooth composition ({'GIF' if create_gif else layout}) took {compose_time:.2f} seconds.")
+        print(f"Request ID {error_uuid}: Photobooth composition ('{layout}' / GIF={create_gif}) took {compose_time:.2f} seconds.")
 
-        # Encode Result to Data URL
+        # --- Encode Result to Data URL ---
         if create_gif:
-             encoded_string = base64.b64encode(composed_result).decode('utf-8')
-             result_data_url = f"data:image/gif;base64,{encoded_string}"
+            # composed_result is already bytes for GIF
+            encoded_string = base64.b64encode(composed_result).decode('utf-8')
+            result_data_url = f"data:image/gif;base64,{encoded_string}"
         elif composed_result:
-             result_data_url = encode_image_to_data_url(composed_result, format=output_format.upper())
-        else: raise RuntimeError("Composition failed to return a result.")
+            # composed_result is a PIL Image object for static images
+            result_data_url = encode_image_to_data_url(composed_result, format=output_format.upper())
+        else:
+            # This case should ideally not happen if compose_photobooth_images raises errors
+            raise RuntimeError("Composition function returned None unexpectedly.")
 
-        # Prepare Response
-        output_filename = f"photobooth_{layout}_{num_shots}shots.{output_format}"
-        photobooths_created += 1 # Increment new counter
+        # --- Prepare Response ---
+        # Create a more descriptive filename
+        frame_suffix = ""
+        if frame_full_path:
+             try:
+                 frame_name_only = os.path.splitext(os.path.basename(frame_choice))[0]
+                 frame_suffix = f"_frame-{frame_name_only}"
+             except: pass # Ignore errors in suffix generation
+        output_filename = f"photobooth_{layout}_{num_shots}shots{frame_suffix}.{output_format}"
+
+        photobooths_created += 1 # Increment global counter
         total_req_time = time.time() - start_req_time
-        print(f"Photobooth Request ID {error_uuid}: Total time: {total_req_time:.2f} seconds. Success.")
+        print(f"--- Photobooth Request ID {error_uuid}: Total time: {total_req_time:.2f} seconds. Success. ---")
         return jsonify({
-            'success': True, 'result_data_url': result_data_url, 'filename': output_filename,
-            'effect_applied': 'photobooth', 'processing_time_seconds': round(compose_time, 2)
+            'success': True,
+            'result_data_url': result_data_url,
+            'filename': output_filename,
+            'effect_applied': 'photobooth', # Indicate photobooth processing
+            'processing_time_seconds': round(compose_time, 2)
         })
 
-    except Exception as e:
-        total_req_time = time.time() - start_req_time
-        print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        print(f"ERROR Processing Photobooth Request (ID: {error_uuid}, Total Time: {total_req_time:.2f}s)")
-        print(f"Error Type: {type(e).__name__}")
-        print(f"Error Details: {e}")
-        traceback.print_exc()
-        print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        return jsonify({
-            'success': False, 'error': 'Photobooth processing failed.',
-            'details': f'An error occurred ({type(e).__name__}). Please try again. (Error ID: {error_uuid})',
-        }), 500
+    # --- Error Handling ---
+    except ValueError as ve: # Catch specific expected errors like no captures
+         total_req_time = time.time() - start_req_time
+         print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+         print(f"VALUE ERROR Processing Photobooth Request (ID: {error_uuid}, Total Time: {total_req_time:.2f}s)")
+         print(f"Error Details: {ve}")
+         print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+         return jsonify({
+             'success': False, 'error': 'Photobooth processing failed.',
+             'details': f'{ve} (Error ID: {error_uuid})', # Provide specific value error
+         }), 400 # Bad Request
+    except Exception as e: # Catch all other unexpected errors
+         total_req_time = time.time() - start_req_time
+         print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+         print(f"UNEXPECTED ERROR Processing Photobooth Request (ID: {error_uuid}, Total Time: {total_req_time:.2f}s)")
+         print(f"Error Type: {type(e).__name__}")
+         print(f"Error Details: {e}")
+         traceback.print_exc() # Print full traceback to server logs
+         print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+         return jsonify({
+             'success': False, 'error': 'Photobooth processing failed unexpectedly on server.',
+             'details': f'An internal error occurred ({type(e).__name__}). Please try again. (Error ID: {error_uuid})',
+         }), 500 # Internal Server Error
 
 
 # --- Routes for UI and Stats ---

@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-</head>
+    </head>
 <body>
     <header class="app-header">
         <h1><i class="fas fa-camera-retro"></i> AI Photoshoot Studio</h1>
@@ -28,39 +28,51 @@
                     <h4><i class="fas fa-image"></i> 1. Get Your Image</h4>
                     <ul>
                         <li><strong>Upload:</strong> Click <i class="fas fa-upload"></i> 'Upload File' and select a PNG, JPG, or WEBP image.</li>
-                        <li><strong>Webcam:</strong> Click <i class="fas fa-video"></i> 'Start Webcam', allow permission, then click <i class="fas fa-camera"></i> 'Capture Frame'. Click <i class="fas fa-video-slash"></i> 'Stop Webcam' when done.</li>
+                        <li><strong>Webcam:</strong> Click <i class="fas fa-video"></i> 'Start Webcam', allow permission, then click <i class="fas fa-camera"></i> 'Capture Frame' for a single shot. Click <i class="fas fa-video-slash"></i> 'Stop Webcam' when done. (Use Photobooth for multiple shots).</li>
                     </ul>
+      
                     <h4><i class="fas fa-edit"></i> 2. Edit Source Image (Optional)</h4>
-                    <p>Use the tools above the 'Source Editor' canvas:</p>
+                    <p>Use the tools above the 'Source Editor' canvas on your uploaded/captured image:</p>
                     <ul>
                         <li><i class="fas fa-mouse-pointer"></i> **Select/Move:** Select drawings or text, then drag to move.</li>
                         <li><i class="fas fa-pencil-alt"></i> **Draw:** Draw on the image. Use controls for color/width.</li>
                         <li><i class="fas fa-font"></i> **Text:** Add text. Double-click text on canvas to edit. Use color picker.</li>
-                        <li><i class="fas fa-trash-alt"></i> **Delete:** Select an item (<i class="fas fa-mouse-pointer"></i>), then click to remove.</li>
-                        <li><i class="fas fa-eraser"></i> **Clear Edits:** Removes only drawings/text, keeps base image.</li>
+                        <li><i class="fas fa-trash-alt"></i> **Delete:** Select an item (<i class="fas fa-mouse-pointer"></i>), then click to remove it.</li>
+                        <li><i class="fas fa-eraser"></i> **Clear Edits:** Removes *only* drawings/text, keeps the base image.</li>
+                        <li><i class="fas fa-rotate-left"></i>/<i class="fas fa-rotate-right"></i> **Rotate:** Rotate the background image 90 degrees.</li>
+                        <li><i class="fas fa-arrows-left-right"></i>/<i class="fas fa-arrows-up-down"></i> **Flip:** Flip the background image horizontally or vertically.</li>
+                        <li><i class="fas fa-crop-simple"></i> **Crop:** Click the crop icon, then click and drag on the image to select an area. Click <i class="fas fa-check"></i> 'Apply' or <i class="fas fa-times"></i> 'Cancel'. (Note: Crop works best *before* rotating or flipping).</li>
                     </ul>
+      
                     <h4><i class="fas fa-photo-film"></i> 3. Photobooth Fun! (Optional)</h4>
                     <ul>
                         <li>Ensure webcam (<i class="fas fa-video"></i>) is active.</li>
-                        <li>Choose Layout, Shots, GIF option first.</li>
+                        <li>Choose **Layout**, **Shots**, **Frame**, and **GIF** options *before* starting. Adjust GIF speed if needed.</li>
                         <li>Click <i class="fas fa-photo-film"></i> 'Start Photobooth'.</li>
-                        <li>Follow countdown, pose for shots! Result appears on the right.</li>
+                        <li>Before each countdown, **select an Effect** (optional) for the upcoming shot using the dropdown that appears.</li>
+                        <li>Follow the countdown, pose for each shot!</li>
+                        <li>The final result (strip, grid, or GIF) will appear on the right.</li>
+                        <li><strong>Frame Disclaimer:</strong> Frame fitting is still being improved and might look stretched on some layouts. Simple border frames work best currently.</li>
                     </ul>
-                    <h4><i class="fas fa-magic"></i> 4. Apply Effects</h4>
+      
+                    <h4><i class="fas fa-magic"></i> 4. Apply Effects (to Single Image)</h4>
                     <ul>
-                        <li>Select an effect from the dropdown.</li>
-                        <li>Adjust parameters if they appear.</li>
-                        <li>Click <i class="fas fa-magic"></i> 'Apply Backend Effect'. Be patient for AI effects.</li>
+                        <li>This applies effects to the image currently shown in the 'Source Editor'.</li>
+                        <li>Select an effect from the main dropdown list.</li>
+                        <li>Adjust parameters if they appear below the dropdown.</li>
+                        <li>Click the main <i class="fas fa-magic"></i> 'Apply Backend Effect' button. Be patient for AI effects.</li>
                     </ul>
+      
                     <h4><i class="fas fa-download"></i> 5. Download Your Creation</h4>
                     <ul>
-                        <li>Result appears in the 'Processed Result' box.</li>
-                        <li>Click <i class="fas fa-download"></i> 'Download Result' below it.</li>
+                        <li>Your final single processed image or photobooth result appears in the 'Processed Result' box.</li>
+                        <li>Click the <i class="fas fa-download"></i> 'Download Result' button below it.</li>
                     </ul>
                     <p><em>Experiment and enjoy creating!</em></p>
                 </div>
-            </details>
-            <div class="control-grid"> <fieldset class="control-group">
+
+            <div class="control-grid">
+                <fieldset class="control-group">
                     <legend>1. Get Image</legend>
                     <div class="input-method">
                         <label for="photo_upload" class="button-like file-upload-label" title="Upload PNG, JPG, WEBP (Check Size Limit)">
@@ -78,8 +90,7 @@
                         <div id="webcam-wrapper">
                             <video id="webcam_video" width="320" height="240" autoplay playsinline></video>
                         </div>
-                        <canvas id="webcam_capture_canvas" style="display: none;"></canvas>
-                    </div>
+                        <canvas id="webcam_capture_canvas" style="display: none;"></canvas> </div>
                 </fieldset>
 
                 <fieldset class="control-group">
@@ -89,13 +100,16 @@
                              Show/Hide Options & Start
                              <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span>
                          </summary>
-                         <div class="collapsible-content"> <div class="photobooth-options">
+                         <div class="collapsible-content">
+                            <div class="photobooth-options">
                                 <div class="param-item">
                                     <label for="photobooth_layout">Layout:</label>
                                     <div class="select-wrapper">
                                         <select id="photobooth_layout" name="photobooth_layout">
                                             <option value="vertical_strip" selected>Vertical Strip</option>
                                             <option value="grid_2x2">2x2 Grid</option>
+                                            <option value="horizontal_strip_3">Horizontal Strip (3)</option>
+                                            <option value="horizontal_strip_4">Horizontal Strip (4)</option>
                                         </select>
                                         <i class="fas fa-chevron-down dropdown-arrow"></i>
                                     </div>
@@ -112,15 +126,44 @@
                                     </div>
                                 </div>
                                 <div class="param-item">
+                                    <label for="photobooth_frame">Frame:</label>
+                                    <div class="select-wrapper">
+                                        <select id="photobooth_frame" name="photobooth_frame">
+                                            <option value="none" selected>No Frame</option>
+                                            <option value="frame_simple_border.png">Simple Border</option>
+                                            <option value="frame_hearts.png">Hearts</option>
+                                            <option value="frame_stars.png">Stars</option>
+                                            </select>
+                                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                                    </div>
+                                    <small class="param-hint" style="flex-basis: 100%;">Apply a decorative frame (not for GIFs).</small>
+                                </div>
+                                <div class="param-item">
                                     <input type="checkbox" id="photobooth_gif" name="photobooth_gif">
                                     <label for="photobooth_gif" style="margin-left: 5px; flex-basis: auto;">Create Animated GIF?</label>
+                                    <div id="gif_duration_options" class="param-item" style="display: none; flex-basis: 100%; margin-top: 5px; padding-left: 20px;">
+                                        <label for="photobooth_gif_duration" style="flex-basis: 100px;">Frame Speed (ms):</label>
+                                        <input type="number" id="photobooth_gif_duration" name="photobooth_gif_duration" value="500" min="100" max="3000" step="50" style="max-width: 100px;">
+                                        <span class="param-hint">Duration for each frame in the GIF.</span>
+                                    </div>
                                     <small class="param-hint" style="flex-basis: 100%;">Creates a GIF instead of a static image.</small>
                                 </div>
                             </div>
+
                             <button id="start_photobooth" class="photobooth-button" title="Start the photobooth sequence!">
                                 <i class="fas fa-photo-film"></i> Start Photobooth
                             </button>
+
                             <div id="photobooth_controls" class="photobooth-active-controls" style="display: none;">
+                                <div id="photobooth_per_shot_effect_area" class="param-item" style="display: none; margin-bottom: 15px;">
+                                    <label for="photobooth_per_shot_effect">Effect for Next Shot:</label>
+                                    <div class="select-wrapper">
+                                        <select id="photobooth_per_shot_effect" name="photobooth_per_shot_effect">
+                                            <option value="none" selected>None</option>
+                                            </select>
+                                         <i class="fas fa-chevron-down dropdown-arrow"></i>
+                                    </div>
+                                </div>
                                 <div id="photobooth_status" class="photobooth-status-display">Initializing...</div>
                                 <div id="photobooth_countdown_visual" class="photobooth-countdown-timer" style="display: none;">
                                     <svg viewBox="0 0 100 100">
@@ -132,11 +175,12 @@
                                 <div id="photobooth_snapshot_preview"></div>
                                 <button id="cancel_photobooth" class="button-like danger" style="display: none; margin-top: 10px;">Cancel Sequence</button>
                             </div>
-                         </div> </details>
+                         </div>
+                    </details>
                 </fieldset>
 
                 <fieldset class="control-group">
-                    <legend>2. Choose Effect</legend>
+                    <legend>2. Choose Effect (Single Image)</legend>
                     <div class="select-wrapper">
                         <select id="effect_select">
                             {% for key, data in effects.items() %}
@@ -153,16 +197,19 @@
                              Show/Hide Parameters
                              <span class="toggle-icon"><i class="fas fa-chevron-down"></i></span>
                          </summary>
-                          <div class="collapsible-content"> <div id="effect_params" class="effect-params-container">
+                         <div class="collapsible-content">
+                            <div id="effect_params" class="effect-params-container">
                                 <div class="param-item"><small>(Select an effect to see parameters)</small></div>
                             </div>
-                         </div> </details>
+                        </div>
+                     </details>
                 </fieldset>
 
                 <fieldset class="control-group apply-group">
-                    <legend>4. Apply!</legend>
-                    <button id="apply_effect_button" class="main-action-button">
-                        <i class="fas fa-magic"></i> </button>
+                    <legend>4. Apply (Single Image)!</legend>
+                    <button id="apply_effect_button" class="main-action-button" title="Apply the selected effect to the image in the Source Editor">
+                        <i class="fas fa-magic"></i> Apply Backend Effect
+                    </button>
                 </fieldset>
 
             </div> <div id="error_message" class="error-message" style="display: none;"></div>
@@ -171,7 +218,7 @@
             <div class="canvas-container card">
                 <h3><i class="fas fa-edit"></i> Source Editor</h3>
                 <div class="fabric-controls">
-                    <button id="tool_select" class="fabric-tool-btn" title="Select/Move Objects"><i class="fas fa-mouse-pointer"></i></button>
+                    <button id="tool_select" class="fabric-tool-btn active" title="Select/Move Objects"><i class="fas fa-mouse-pointer"></i></button>
                     <button id="tool_draw" class="fabric-tool-btn" title="Free Draw"><i class="fas fa-pencil-alt"></i></button>
                     <input type="color" id="draw_color" value="#FF0000" title="Drawing/Text Color">
                     <label for="draw_width" class="visually-hidden">Brush Width</label>
@@ -180,7 +227,18 @@
                     <button id="tool_add_text" class="fabric-tool-btn" title="Add Text"><i class="fas fa-font"></i></button>
                     <button id="delete_selected" class="fabric-tool-btn danger" title="Delete Selected Object(s)"><i class="fas fa-trash-alt"></i></button>
                     <button id="clear_canvas_edits" class="fabric-tool-btn warning" title="Clear only drawings/text (keeps base image)"><i class="fas fa-eraser"></i></button>
-                </div>
+
+                    <span class="fabric-control-separator">|</span>
+                    <button id="tool_rotate_left" class="fabric-tool-btn" title="Rotate Left 90°"><i class="fas fa-rotate-left"></i></button>
+                    <button id="tool_rotate_right" class="fabric-tool-btn" title="Rotate Right 90°"><i class="fas fa-rotate-right"></i></button>
+                    <button id="tool_flip_h" class="fabric-tool-btn" title="Flip Horizontal"><i class="fas fa-arrows-left-right"></i></button>
+                    <button id="tool_flip_v" class="fabric-tool-btn" title="Flip Vertical"><i class="fas fa-arrows-up-down"></i></button>
+
+                    <span class="fabric-control-separator">|</span>
+                    <button id="tool_start_crop" class="fabric-tool-btn" title="Start Crop Selection"><i class="fas fa-crop-simple"></i></button>
+                    <button id="tool_apply_crop" class="fabric-tool-btn success" title="Apply Crop" style="display: none;"><i class="fas fa-check"></i> Apply</button>
+                    <button id="tool_cancel_crop" class="fabric-tool-btn danger" title="Cancel Crop" style="display: none;"><i class="fas fa-times"></i> Cancel</button>
+                    </div>
                 <div id="source_canvas_wrapper" class="canvas-wrapper">
                     <canvas id="source_canvas"></canvas>
                     <div id="source_placeholder" class="placeholder-text">
@@ -208,7 +266,9 @@
                     </a>
                 </div>
             </div>
-        </section> </main> <footer class="app-footer">
+        </section> </main>
+
+    <footer class="app-footer">
         <div class="footer-content">
             <p class="creator-info">
                 &copy; 2025 <a href="https://github.com/Owono2001" target="_blank" rel="noopener noreferrer" title="Visit Pedro's GitHub Profile">Pedro Fabian Owono</a>.
@@ -226,6 +286,7 @@
     </footer>
 
     <script>
+        // Pass available effects data from Flask to JavaScript
         const availableEffectsData = JSON.parse('{{ effects | tojson | safe }}');
     </script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

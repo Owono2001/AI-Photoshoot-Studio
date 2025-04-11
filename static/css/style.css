@@ -571,3 +571,39 @@ body.effect-category-ai .control-group legend { background: -webkit-linear-gradi
     width: auto; /* Maintain aspect ratio */
     object-fit: contain; /* Ensure it fits within bounds */
 }
+
+
+/* Separator in Fabric Controls */
+.fabric-control-separator {
+    margin: 0 5px;
+    color: var(--border-color);
+    font-size: 1.2em;
+    align-self: center;
+}
+
+/* Style for active crop button (when cropping mode is on) */
+.fabric-tool-btn.cropping {
+    background-color: #fff3cd; /* Bootstrap warning background */
+    color: #664d03; /* Bootstrap warning text */
+    border-color: #ffeeba; /* Bootstrap warning border */
+}
+.fabric-tool-btn.cropping:hover {
+     background-color: #ffeeba;
+}
+
+
+/* Style for Success button (Apply Crop) */
+.fabric-tool-btn.success {
+     background-color: #d1e7dd; /* Bootstrap success background */
+     color: #0f5132; /* Bootstrap success text */
+     border-color: #badbcc; /* Bootstrap success border */
+}
+.fabric-tool-btn.success:hover {
+    background-color: #badbcc;
+}
+
+/* Ensure danger button styles exist (used for Cancel Crop) */
+.fabric-tool-btn.danger {
+    background-color: #f8d7da; color: #721c24; border-color: #f5c6cb;
+}
+.fabric-tool-btn.danger:hover { background-color: #f5c6cb; }

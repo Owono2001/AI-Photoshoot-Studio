@@ -35,6 +35,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteSelectedButton = document.getElementById('delete_selected');
     const clearEditsButton = document.getElementById('clear_canvas_edits');
 
+    // --- ADD BACK Transformation Buttons ---
+    const rotateLeftButton = document.getElementById('tool_rotate_left');
+    const rotateRightButton = document.getElementById('tool_rotate_right');
+    const flipHorizontalButton = document.getElementById('tool_flip_h');
+    const flipVerticalButton = document.getElementById('tool_flip_v');
+    const startCropButton = document.getElementById('tool_start_crop');
+    const applyCropButton = document.getElementById('tool_apply_crop');
+    const cancelCropButton = document.getElementById('tool_cancel_crop');
+    // --- END ADD BACK ---
+    
+
     // Photobooth Elements
     const startPhotoboothButton = document.getElementById('start_photobooth');
     const photoboothControlsDiv = document.getElementById('photobooth_controls');
@@ -47,6 +58,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const photoboothLayoutSelect = document.getElementById('photobooth_layout');
     const photoboothShotsSelect = document.getElementById('photobooth_shots');
     const photoboothGifCheckbox = document.getElementById('photobooth_gif');
+    const photoboothFrameSelect = document.getElementById('photobooth_frame'); // ADDED
+    const gifDurationOptionsDiv = document.getElementById('gif_duration_options'); // ADDED
+    const gifDurationInput = document.getElementById('photobooth_gif_duration'); // ADDED
+    const perShotEffectArea = document.getElementById('photobooth_per_shot_effect_area'); // ADDED
+    const perShotEffectSelect = document.getElementById('photobooth_per_shot_effect'); // ADDED
 
     // Store original content for Apply button restoration
     let applyEffectButtonOriginalContent = applyEffectButton.innerHTML;
@@ -56,12 +72,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let sourceImageFilename = 'source_image.png';
     let isPhotoboothMode = false;
     let photoboothCaptures = []; // Stores RESIZED DataURLs
+    let photoboothCurrentEffect = 'none'; // ADDED: To store effect choice before capture
     let photoboothTimer = null;
     let photoboothCountdownValue = 3;
     let photoboothShotsTaken = 0;
     let currentPhotoboothConfig = {};
     let isImageReady = false; // Track if source canvas has content
     let currentTool = 'select';
+
+    // --- ADD BACK Cropping State ---
+    let isCroppingMode = false;
+    let cropRect = null; // Fabric.Rect object for the crop selection
+    let cropOriginX, cropOriginY; // Keep track of starting point for drawing rect
+    // let originalImageForCrop = null; // Maybe not needed if we use getElement()
+    // --- END ADD BACK ---
 
     // --- Constants ---
     const PHOTOBOOTH_INITIAL_DELAY_MS = 1500;
@@ -230,68 +254,86 @@ document.addEventListener('DOMContentLoaded', () => {
       * @param {function(string|null)} callback Function called with the resized DataURL or null on error.
       */
      function resizeDataUrl(dataUrl, maxWidth, maxHeight, callback) {
-         if (!dataUrl || !dataUrl.startsWith('data:image')) {
-             console.error("Invalid DataURL provided for resizing.");
-             showError("Invalid image data for resizing.");
-             callback(null);
+        // Input validation
+        if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image')) {
+            console.error("Invalid DataURL provided for resizing:", dataUrl ? dataUrl.substring(0, 30) + '...' : 'null');
+            showError("Invalid image data provided for resizing.");
+            // Ensure callback is always called asynchronously even on early exit
+            setTimeout(() => callback(null), 0);
+            return;
+        }
+        if (maxWidth <= 0 || maxHeight <= 0) {
+             console.error("Invalid dimensions provided for resizing:", {maxWidth, maxHeight});
+             showError("Invalid target dimensions for resizing.");
+             setTimeout(() => callback(null), 0);
              return;
-         }
+        }
 
-         const img = new Image();
-         img.onload = () => {
-             try {
+        const img = new Image();
+
+        img.onload = () => {
+            try {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                let width = img.width;
-                let height = img.height;
 
-                if (width <= 0 || height <= 0) {
-                    throw new Error("Invalid image dimensions loaded for resizing.");
+                let originalWidth = img.width;
+                let originalHeight = img.height;
+
+                if (originalWidth <= 0 || originalHeight <= 0) {
+                    throw new Error(`Invalid source image dimensions loaded: ${originalWidth}x${originalHeight}`);
                 }
 
-                // Calculate scaling factor - prevent scaling up
-                const scaleFactor = Math.min(maxWidth / width, maxHeight / height, 1);
+                // Calculate scaling factor - ensures image is not scaled up (Math.min includes 1)
+                const scaleFactor = Math.min(maxWidth / originalWidth, maxHeight / originalHeight, 1);
 
                 // Calculate new dimensions, ensuring they are at least 1px
-                width = Math.max(1, Math.round(width * scaleFactor));
-                height = Math.max(1, Math.round(height * scaleFactor));
+                const newWidth = Math.max(1, Math.round(originalWidth * scaleFactor));
+                const newHeight = Math.max(1, Math.round(originalHeight * scaleFactor));
 
-                canvas.width = width;
-                canvas.height = height;
+                canvas.width = newWidth;
+                canvas.height = newHeight;
 
                 // Draw image scaled onto the temporary canvas
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                // Improves quality for downscaling compared to default
+                ctx.imageSmoothingQuality = "high";
+                ctx.drawImage(img, 0, 0, newWidth, newHeight);
 
-                // Get the resized Data URL (use JPEG for potentially smaller size)
-                // Include error handling for toDataURL itself
+                // Get the resized Data URL as JPEG for potentially smaller size in transfers
                 const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.9); // Quality 0.9
-                if (!resizedDataUrl || resizedDataUrl === "data:,") {
-                     throw new Error("Canvas toDataURL failed or returned empty data after resize.");
-                }
-                console.log(`Resized image from ${img.width}x${img.height} to ${width}x${height}`);
-                callback(resizedDataUrl);
 
-             } catch (error) {
-                 console.error("Error during image resizing canvas operation:", error);
-                 showError(`Image resizing failed: ${error.message}`);
-                 callback(null); // Indicate failure
-             }
-         };
-         img.onerror = (err) => {
-             // Log the specific error if possible
-             console.error("Failed to load image for resizing (img.onerror):", err);
-             showError("Failed to load image for resizing. It might be corrupted or an unsupported format.");
-             callback(null); // Indicate failure
-         };
-         // Handle potential SecurityErrors or other issues when setting src
-         try {
-             img.src = dataUrl;
-         } catch (error) {
-             console.error("Error setting image src for resizing (potential CORS or invalid URL):", error);
-             showError(`Failed to load image source for resizing: ${error.message}`);
-             callback(null);
-         }
-     }
+                // Validate output from toDataURL
+                if (!resizedDataUrl || resizedDataUrl === "data:,") {
+                    throw new Error("Canvas toDataURL failed or returned empty/invalid data after resize.");
+                }
+
+                console.log(`Resized image from ${originalWidth}x${originalHeight} to ${newWidth}x${newHeight} (JPEG)`);
+                callback(resizedDataUrl); // Success
+
+            } catch (error) {
+                console.error("Error during image resizing canvas operation:", error);
+                showError(`Image resizing failed: ${error.message || 'Unknown canvas error'}`);
+                callback(null); // Indicate failure
+            }
+        };
+
+        img.onerror = (event) => {
+            // Log the specific error if possible, check event details
+            console.error("Failed to load image for resizing (img.onerror). Event:", event);
+            showError("Failed to load image for resizing. It might be corrupted, an unsupported format, or a network issue.");
+            callback(null); // Indicate failure
+        };
+
+        // Handle potential SecurityErrors or other issues when setting src
+        try {
+            img.crossOrigin = "anonymous"; // Attempt to enable CORS for the image loading
+            img.src = dataUrl;
+        } catch (error) {
+            console.error("Error setting image src for resizing (potential CORS or invalid URL):", error);
+            showError(`Failed to initiate image loading for resizing: ${error.message}`);
+            // Ensure callback is called asynchronously
+            setTimeout(() => callback(null), 0);
+        }
+   }
 
 
     // --- Core App Logic & Event Listeners ---
@@ -328,10 +370,15 @@ document.addEventListener('DOMContentLoaded', () => {
          console.log(`Apply button readiness: ${isImageReady}, isLoading: ${isLoading}, Button enabled: ${!applyEffectButton.disabled}`);
     }
 
-    // File Upload
+    // File Upload Listener
     photoUploadInput.addEventListener('change', (event) => {
+        console.log("Upload input changed!"); // <-- ADDED
         const file = event.target.files[0];
-        if (!file) return; // No file selected
+        if (!file) {
+            console.log("No file selected."); // <-- ADDED
+            return;
+        }
+        console.log("File selected:", file.name, file.type, file.size); // <-- ADDED
 
         // Optional: Client-side size check BEFORE reading
         const MAX_UPLOAD_MB = 100; // Match server limit roughly
@@ -344,38 +391,60 @@ document.addEventListener('DOMContentLoaded', () => {
         if (file.type.startsWith('image/')) {
             sourceImageFilename = file.name;
             const reader = new FileReader();
+
             reader.onload = (e) => {
+                console.log("FileReader onload triggered."); // <-- ADDED
                 const dataUrl = e.target.result;
+                if (!dataUrl) {
+                    console.error("FileReader result is empty!"); // <-- ADDED Error Check
+                    showError("Failed to read file data.");
+                    return;
+                }
+                console.log("Data URL created (first 50 chars):", dataUrl.substring(0, 50)); // <-- ADDED
+
                 fabric.Image.fromURL(dataUrl, (img) => {
-                    if (!sourceCanvas || !sourceCanvasWrapper) return; // Safety check
-                    sourceCanvas.clear(); // Clear objects AND background
-                    sourceCanvas.backgroundColor = '#ffffff'; // Reset background color just in case
+                    console.log("Fabric.Image.fromURL callback entered."); // <-- ADDED
+                    if (!img || !img.width) { // Check if image object is valid
+                        console.error("Fabric failed to load image from Data URL or image has no width."); // <-- ADDED Error Check
+                        showError("Failed to load image onto canvas.");
+                        return;
+                    }
 
-                    // Trigger resize logic immediately AFTER loading image but BEFORE setting background
-                    // This ensures canvas dimensions match the wrapper BEFORE placing the image
+                    if (!sourceCanvas || !sourceCanvasWrapper) {
+                        console.error("Source canvas or wrapper not found in Fabric callback."); // <-- ADDED Error Check
+                        return;
+                    }
+                    console.log("Clearing source canvas and setting background..."); // <-- ADDED
+
+                    sourceCanvas.clear();
+                    sourceCanvas.backgroundColor = '#ffffff';
                     resizeFabricCanvas(sourceCanvas, sourceCanvasWrapper);
-
-                    // Now display image scaled within the correctly sized canvas
                     resizeAndPositionImage(sourceCanvas, img, true); // Use as background
 
                     sourcePlaceholder.style.display = 'none';
-                    sourceCanvasWrapper.classList.add('has-content'); // Add class to wrapper
+                    sourceCanvasWrapper.classList.add('has-content');
 
                     clearResultCanvas();
-                    stopWebcam();
-                    if(isPhotoboothMode) cancelPhotoboothSequence("File Uploaded");
+                    stopWebcam(); // Stop webcam if it was running
+                    if (isPhotoboothMode) cancelPhotoboothSequence("File Uploaded");
                     currentTool = 'select';
                     updateToolButtons();
                     clearError();
                     updateApplyButtonReadiness();
+                    console.log("Image successfully loaded onto canvas."); // <-- ADDED
+
                 }, { crossOrigin: 'anonymous' });
             }
-             reader.onerror = (err) => {
-                 console.error("FileReader error:", err);
-                 showError("Error reading file.");
-                 clearSourceCanvas();
-             };
+
+            reader.onerror = (err) => {
+                console.error("FileReader error:", err); // Keep this
+                showError("Error reading file.");
+                clearSourceCanvas();
+            };
+
+            console.log("Calling reader.readAsDataURL..."); // <-- ADDED
             reader.readAsDataURL(file);
+
         } else {
             showError("Invalid file type. Please upload an image (PNG, JPG, WEBP).");
             photoUploadInput.value = '';
@@ -612,6 +681,272 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
+    // --- Rotate Logic ---
+    function rotateCanvasBackground(degrees) {
+        if (!sourceCanvas || !isImageReady) return;
+        const bgImage = sourceCanvas.backgroundImage;
+        if (!bgImage || !bgImage.set) {
+            showError("No background image found to rotate.");
+            return;
+        }
+        const currentAngle = typeof bgImage.angle === 'number' ? bgImage.angle : 0;
+        const newAngle = currentAngle + degrees;
+        bgImage.set({ angle: newAngle });
+        sourceCanvas.centerObject(bgImage); // Attempt to re-center
+        sourceCanvas.renderAll();
+        console.log(`Rotated background image to ${newAngle} degrees`);
+        updateApplyButtonReadiness();
+    }
+
+    rotateLeftButton?.addEventListener('click', () => {
+        if (isCroppingMode) { showError("Cannot rotate while cropping."); return; }
+        rotateCanvasBackground(-90);
+    });
+
+    rotateRightButton?.addEventListener('click', () => {
+        if (isCroppingMode) { showError("Cannot rotate while cropping."); return; }
+        rotateCanvasBackground(90);
+    });
+
+    // --- Flip Logic ---
+    function flipCanvasBackground(axis) { // axis should be 'X' or 'Y'
+        if (!sourceCanvas || !isImageReady) return;
+        const bgImage = sourceCanvas.backgroundImage;
+        if (!bgImage || !bgImage.set) {
+            showError("No background image found to flip.");
+            return;
+        }
+        if (axis === 'X') {
+            bgImage.set({ flipX: !bgImage.flipX });
+            console.log(`Flipped background horizontally: ${bgImage.flipX}`);
+        } else if (axis === 'Y') {
+            bgImage.set({ flipY: !bgImage.flipY });
+            console.log(`Flipped background vertically: ${bgImage.flipY}`);
+        }
+        sourceCanvas.renderAll();
+        updateApplyButtonReadiness();
+    }
+
+    flipHorizontalButton?.addEventListener('click', () => {
+         if (isCroppingMode) { showError("Cannot flip while cropping."); return; }
+         flipCanvasBackground('X');
+    });
+
+    flipVerticalButton?.addEventListener('click', () => {
+         if (isCroppingMode) { showError("Cannot flip while cropping."); return; }
+         flipCanvasBackground('Y');
+    });
+
+    // Function to toggle UI elements for cropping mode
+    function setCroppingUI(enable) {
+        isCroppingMode = enable;
+        if (enable) {
+            startCropButton?.classList.add('cropping'); // Indicate active crop mode
+
+            // --- CORRECTED LINES ---
+            if (applyCropButton) {
+                applyCropButton.style.display = 'inline-block';
+                applyCropButton.disabled = !cropRect; // Disable apply until rect is drawn (or immediately if cropRect is null)
+            }
+            if (cancelCropButton) {
+                 cancelCropButton.style.display = 'inline-block';
+            }
+            // --- END CORRECTED LINES ---
+
+            // Disable other tools
+            toolSelectButton?.classList.remove('active');
+            toolDrawButton?.classList.remove('active');
+            if (sourceCanvas) {
+                sourceCanvas.isDrawingMode = false;
+                sourceCanvas.selection = false; // Disable object selection
+                sourceCanvas.defaultCursor = 'crosshair';
+                sourceCanvas.hoverCursor = 'crosshair';
+                sourceCanvas.discardActiveObject(); // Deselect any selected objects
+                sourceCanvas.renderAll();
+            }
+            // Disable transformation and editing buttons during crop
+            [toolDrawButton, addTextButton, deleteSelectedButton, clearEditsButton, rotateLeftButton, rotateRightButton, flipHorizontalButton, flipVerticalButton].forEach(btn => { if (btn) btn.disabled = true; });
+        } else {
+            startCropButton?.classList.remove('cropping');
+
+            // --- CORRECTED LINES ---
+            if (applyCropButton) {
+                 applyCropButton.style.display = 'none';
+            }
+            if (cancelCropButton) {
+                 cancelCropButton.style.display = 'none';
+            }
+             // --- END CORRECTED LINES ---
+
+            if (cropRect && sourceCanvas) {
+                sourceCanvas.remove(cropRect); // Remove visual crop rectangle
+            }
+            cropRect = null; // Reset crop rectangle object
+
+            if (sourceCanvas) {
+                sourceCanvas.defaultCursor = 'default';
+                sourceCanvas.hoverCursor = 'move'; // Or default depending on selected tool
+                sourceCanvas.selection = (currentTool === 'select'); // Re-enable selection if appropriate
+                sourceCanvas.renderAll();
+            }
+            // Re-enable transformation and editing buttons
+            [toolDrawButton, addTextButton, deleteSelectedButton, clearEditsButton, rotateLeftButton, rotateRightButton, flipHorizontalButton, flipVerticalButton].forEach(btn => { if (btn) btn.disabled = false; });
+            // Restore active state of previously selected tool if needed (e.g., select tool)
+            updateToolButtons();
+        }
+    }
+
+    startCropButton?.addEventListener('click', () => {
+        if (!sourceCanvas || !isImageReady) {
+             showError("Please load an image before cropping.");
+             return;
+        }
+        if (isCroppingMode) return;
+        console.log("Starting crop mode");
+        setCroppingUI(true);
+    });
+
+    cancelCropButton?.addEventListener('click', () => {
+        if (!isCroppingMode) return;
+        console.log("Cancelling crop mode");
+        setCroppingUI(false);
+    });
+
+    applyCropButton?.addEventListener('click', () => {
+        if (!isCroppingMode || !cropRect || !sourceCanvas || !sourceCanvas.backgroundImage) {
+            showError("No valid crop area selected or no background image.");
+            setCroppingUI(false);
+            return;
+        }
+        console.log("Applying crop...");
+        try {
+            const bgImage = sourceCanvas.backgroundImage;
+            const cropZone = {
+                left: cropRect.left,
+                top: cropRect.top,
+                width: cropRect.getScaledWidth(),
+                height: cropRect.getScaledHeight()
+            };
+            const bgScaleX = bgImage.scaleX || 1;
+            const bgScaleY = bgImage.scaleY || 1;
+            const bgOffsetX = bgImage.left || 0;
+            const bgOffsetY = bgImage.top || 0;
+
+             if (bgImage.angle !== 0 || bgImage.flipX || bgImage.flipY) {
+                 console.warn("Cropping a rotated/flipped background may yield unexpected results.");
+             }
+
+            const relativeCropX = (cropZone.left - bgOffsetX);
+            const relativeCropY = (cropZone.top - bgOffsetY);
+            const originalCropX = relativeCropX / bgScaleX;
+            const originalCropY = relativeCropY / bgScaleY;
+            const originalCropWidth = cropZone.width / bgScaleX;
+            const originalCropHeight = cropZone.height / bgScaleY;
+
+            const originalImgElement = bgImage.getElement();
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+
+             if (originalCropWidth <= 0 || originalCropHeight <= 0) {
+                  throw new Error("Invalid crop dimensions calculated.");
+             }
+
+            tempCanvas.width = originalCropWidth;
+            tempCanvas.height = originalCropHeight;
+
+            tempCtx.drawImage(
+                originalImgElement,
+                originalCropX, originalCropY,
+                originalCropWidth, originalCropHeight,
+                0, 0,
+                originalCropWidth, originalCropHeight
+            );
+
+            const croppedDataUrl = tempCanvas.toDataURL('image/png');
+
+            sourceCanvas.clear();
+            sourceCanvas.backgroundColor = '#ffffff';
+
+            fabric.Image.fromURL(croppedDataUrl, (newCroppedImg) => {
+                 if (!sourceCanvas || !sourceCanvasWrapper) return;
+                 resizeFabricCanvas(sourceCanvas, sourceCanvasWrapper);
+                 resizeAndPositionImage(sourceCanvas, newCroppedImg, true);
+                 sourcePlaceholder.style.display = 'none';
+                 sourceCanvasWrapper.classList.add('has-content');
+                 isImageReady = true;
+                 updateApplyButtonReadiness();
+                 console.log("Crop applied successfully.");
+            }, { crossOrigin: 'anonymous' });
+
+        } catch (error) {
+             console.error("Error applying crop:", error);
+             showError(`Failed to apply crop: ${error.message}`);
+        } finally {
+             setCroppingUI(false);
+        }
+    });
+
+    // Mouse events for drawing crop rectangle
+     if(sourceCanvas) {
+        sourceCanvas.on('mouse:down', (o) => {
+            if (!isCroppingMode || o.target === cropRect) return;
+            if (cropRect) sourceCanvas.remove(cropRect);
+
+            const pointer = sourceCanvas.getPointer(o.e);
+            cropOriginX = pointer.x;
+            cropOriginY = pointer.y;
+
+            cropRect = new fabric.Rect({ /* ... rect options ... */ });
+            // --- Same rect options as before ---
+             cropRect = new fabric.Rect({
+                left: cropOriginX, top: cropOriginY, width: 0, height: 0,
+                fill: 'rgba(0, 0, 0, 0.3)', stroke: 'rgba(255, 255, 255, 0.8)',
+                strokeWidth: 1, strokeDashArray: [5, 5],
+                selectable: false, evented: false, transparentCorners: true,
+            });
+            // --- End rect options ---
+            sourceCanvas.add(cropRect);
+            applyCropButton.disabled = true;
+        });
+
+        sourceCanvas.on('mouse:move', (o) => {
+            if (!isCroppingMode || !cropRect || !cropOriginX) return;
+            const pointer = sourceCanvas.getPointer(o.e);
+            let width = pointer.x - cropOriginX;
+            let height = pointer.y - cropOriginY;
+            let newLeft = cropOriginX; let newTop = cropOriginY;
+            if (width < 0) { newLeft = pointer.x; width = Math.abs(width); }
+            if (height < 0) { newTop = pointer.y; height = Math.abs(height); }
+
+            cropRect.set({ left: newLeft, top: newTop, width: width, height: height });
+            sourceCanvas.renderAll();
+            applyCropButton.disabled = (width < 5 || height < 5);
+        });
+
+        sourceCanvas.on('mouse:up', (o) => {
+             if (!isCroppingMode || !cropRect) return;
+             const finalWidth = cropRect.width; const finalHeight = cropRect.height;
+             applyCropButton.disabled = (finalWidth < 5 || finalHeight < 5);
+             if (applyCropButton.disabled && cropRect) { // Also check cropRect exists
+                  console.log("Crop rectangle too small, removing.");
+                  sourceCanvas.remove(cropRect);
+                  cropRect = null;
+             } else if (cropRect) { // Check cropRect exists before logging
+                  console.log("Crop rectangle drawn:", cropRect.left, cropRect.top, cropRect.width, cropRect.height);
+             }
+             cropOriginX = null; cropOriginY = null; // Reset origins
+        });
+    } // End if(sourceCanvas)
+
+
+    // --- Add Event Listener for GIF Checkbox ---
+    photoboothGifCheckbox?.addEventListener('change', () => {
+        if (gifDurationOptionsDiv) {
+            gifDurationOptionsDiv.style.display = photoboothGifCheckbox.checked ? 'flex' : 'none';
+        }
+    });
+
+
     // Apply Effect Button (Main /process route) - Handles resizing before calling sendProcessRequest
     applyEffectButton?.addEventListener('click', () => {
         if (!sourceCanvas) { showError("Canvas not ready."); return; }
@@ -707,9 +1042,35 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPhotoboothConfig = {
             layout: photoboothLayoutSelect.value,
             shots: parseInt(photoboothShotsSelect.value, 10),
-            createGif: photoboothGifCheckbox.checked
+            createGif: photoboothGifCheckbox.checked,
+            frame: photoboothFrameSelect.value, // ADDED
+            gifDuration: photoboothGifCheckbox.checked ? parseInt(gifDurationInput.value, 10) : 500 // ADDED
         };
         console.log("Photobooth Config:", currentPhotoboothConfig);
+
+
+         // --- ADDED: Populate Per-Shot Effect Dropdown ---
+         if (perShotEffectSelect) {
+            perShotEffectSelect.innerHTML = ''; // Clear existing
+            const simpleEffects = { // Define simple effects suitable for per-shot
+                'none': 'None',
+                'grayscale': 'Grayscale',
+                'sepia': 'Sepia',
+                'invert': 'Invert Colors'
+                // Add other fast/simple effects here if desired
+            };
+            for (const effectKey in simpleEffects) {
+                const option = document.createElement('option');
+                option.value = effectKey;
+                option.textContent = simpleEffects[effectKey];
+                perShotEffectSelect.appendChild(option);
+            }
+            perShotEffectSelect.value = 'none'; // Default to 'none'
+        }
+        if (perShotEffectArea) {
+             perShotEffectArea.style.display = 'flex'; // Show the dropdown
+        }
+        // --- END ADDED ---
 
         photoboothControlsDiv.style.display = 'block';
         cancelPhotoboothButton.style.display = 'inline-block';
@@ -729,6 +1090,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function runPhotoboothCountdown() {
         if (!isPhotoboothMode || !photoboothCountdownCircle) return;
+
+
+        // --- ADDED: Read effect for the upcoming shot ---
+        photoboothCurrentEffect = perShotEffectSelect.value;
+        console.log(`Effect selected for shot ${photoboothShotsTaken + 1}: ${photoboothCurrentEffect}`);
+        // --- END ADDED ---
 
         photoboothCountdownValue = PHOTOBOOTH_COUNTDOWN_SECONDS;
         photoboothStatusDiv.textContent = `Taking shot ${photoboothShotsTaken + 1} of ${currentPhotoboothConfig.shots}...`;
@@ -762,151 +1129,245 @@ document.addEventListener('DOMContentLoaded', () => {
         photoboothCountdownText.parentElement.classList.add('photobooth-capture-flash');
 
         setTimeout(() => { // Delay for SNAP visibility
-            if (!isPhotoboothMode) return;
+            if (!isPhotoboothMode) return; // Check if cancelled during SNAP display
+
             const frameDataUrl = captureFrameToDataURL(); // Capture raw frame
 
             if (frameDataUrl) {
                 photoboothStatusDiv.textContent = `Processing shot ${photoboothShotsTaken + 1}...`;
-                // Resize the captured frame
+
+                // Resize the captured frame before storing
                 resizeDataUrl(frameDataUrl, MAX_PHOTOBOOTH_SHOT_DIMENSION, MAX_PHOTOBOOTH_SHOT_DIMENSION, (resizedShotDataUrl) => {
-                    if (!isPhotoboothMode) return; // Check again after async resize
+                    // ---- Start of Updated Callback ----
+                    if (!isPhotoboothMode) {
+                        console.log("Photobooth cancelled during resize, discarding shot.");
+                        return; // Check again after async resize, exit if cancelled
+                    }
                     if (!resizedShotDataUrl) {
-                        showError(`Failed to process snapshot ${photoboothShotsTaken + 1}. Stopping.`);
+                        showError(`Failed to process snapshot ${photoboothShotsTaken + 1}. Stopping photobooth.`);
                         cancelPhotoboothSequence("Snapshot processing failed");
-                        return;
+                        return; // Stop if resizing failed
                     }
 
-                    photoboothCaptures.push(resizedShotDataUrl); // Store RESIZED URL
+                    // Store the result as an object including the effect chosen *before* the shot
+                    photoboothCaptures.push({
+                        dataUrl: resizedShotDataUrl,
+                        effect: photoboothCurrentEffect // photoboothCurrentEffect was set in runPhotoboothCountdown
+                    });
                     photoboothShotsTaken++;
+                    console.log(`Stored shot ${photoboothShotsTaken} with effect: ${photoboothCurrentEffect}`);
 
-                    const thumb = document.createElement('img');
-                    thumb.src = resizedShotDataUrl;
-                    thumb.onload = () => { thumb.classList.add('loaded'); };
-                    photoboothSnapshotPreview.appendChild(thumb);
-
-                    if (photoboothShotsTaken < currentPhotoboothConfig.shots) {
-                        photoboothCountdownVisualDiv.style.display = 'none';
-                        photoboothStatusDiv.textContent = `Shot ${photoboothShotsTaken} ready! Next...`;
-                        setTimeout(() => { if (isPhotoboothMode) runPhotoboothCountdown(); }, PHOTOBOOTH_INTER_SHOT_DELAY_MS);
-                    } else {
-                        photoboothCountdownVisualDiv.style.display = 'none';
-                        photoboothStatusDiv.textContent = "All shots captured! Processing...";
-                        sendPhotoboothDataToBackend(); // Sends resized URLs
+                    // Display thumbnail preview
+                    if (photoboothSnapshotPreview) {
+                        const thumb = document.createElement('img');
+                        thumb.src = resizedShotDataUrl;
+                        thumb.alt = `Snapshot ${photoboothShotsTaken}`;
+                        thumb.title = `Shot ${photoboothShotsTaken} (Effect: ${photoboothCurrentEffect})`;
+                        thumb.onload = () => { thumb.classList.add('loaded'); }; // Fade in animation via CSS
+                        photoboothSnapshotPreview.appendChild(thumb);
                     }
-                }); // End resize callback
+
+                    // Check if more shots are needed or finish
+                    if (photoboothShotsTaken < currentPhotoboothConfig.shots) {
+                        photoboothCountdownVisualDiv.style.display = 'none'; // Hide timer between shots
+                        photoboothStatusDiv.textContent = `Shot ${photoboothShotsTaken} ready! Next...`;
+                        // Show effect selector for the *next* shot
+                        if(perShotEffectArea) perShotEffectArea.style.display = 'flex';
+                        // Schedule the next countdown
+                        setTimeout(() => {
+                             if (isPhotoboothMode) runPhotoboothCountdown();
+                        }, PHOTOBOOTH_INTER_SHOT_DELAY_MS);
+                    } else {
+                        // All shots taken
+                        photoboothCountdownVisualDiv.style.display = 'none';
+                        if(perShotEffectArea) perShotEffectArea.style.display = 'none'; // Hide selector
+                        photoboothStatusDiv.textContent = "All shots captured! Composing...";
+                        sendPhotoboothDataToBackend(); // Send data to backend for final composition
+                    }
+                    // ---- End of Updated Callback ----
+                }); // End resizeDataUrl callback
+
             } else {
-                // Error shown in captureFrameToDataURL if needed
+                // captureFrameToDataURL failed (error already shown inside that function)
+                showError("Failed to capture snapshot. Stopping photobooth.");
                 cancelPhotoboothSequence("Capture failed");
             }
-        }, 150); // End SNAP delay timeout
+        }, 150); // Short delay after "SNAP!" before processing
     }
 
+    // Sends finalized (resized) photobooth data to the backend for composition.
     function sendPhotoboothDataToBackend() {
-        if (!isPhotoboothMode) return;
-        console.log("Sending RESIZED photobooth data to backend...");
-        // Use general loading state, update specific status
-        showLoading(true, "Composing your creation...");
-        photoboothStatusDiv.textContent = "Composing your creation...";
+        if (!isPhotoboothMode) {
+             console.warn("Attempted to send photobooth data when not in photobooth mode.");
+             return;
+        }
+        if (!photoboothCaptures || photoboothCaptures.length === 0) {
+             showError("No captures available to send for photobooth composition.");
+             cancelPhotoboothSequence("No captures");
+             return;
+        }
 
+        console.log(`Sending ${photoboothCaptures.length} RESIZED photobooth captures to backend...`);
+        // Use general loading state, update specific status text
+        showLoading(true, "Composing your photobooth creation..."); // Disables most controls
+        if (photoboothStatusDiv) photoboothStatusDiv.textContent = "Composing your creation...";
+
+        // Create FormData object to send data
         const formData = new FormData();
+
+        // Append configuration options
         formData.append('layout', currentPhotoboothConfig.layout);
         formData.append('shots', String(photoboothCaptures.length)); // Send actual number of successful captures
-        formData.append('create_gif', currentPhotoboothConfig.createGif);
+        formData.append('create_gif', String(currentPhotoboothConfig.createGif)); // Send as string 'true'/'false'
+        formData.append('frame_choice', currentPhotoboothConfig.frame); // Send selected frame filename ('none' if no frame)
 
-        photoboothCaptures.forEach((dataUrl, index) => {
-             // Ensure dataUrl is valid before appending
-             if (dataUrl) {
-                formData.append(`captures[${index}]`, dataUrl);
+        // Append GIF duration only if creating a GIF
+        if (currentPhotoboothConfig.createGif) {
+            const duration = Math.max(100, currentPhotoboothConfig.gifDuration || 500); // Ensure minimum duration
+            formData.append('gif_duration', String(duration));
+        }
+
+        // Append structured capture data (DataURL and Effect for each shot)
+        photoboothCaptures.forEach((capture, index) => {
+             if (capture && capture.dataUrl) {
+                 // Key format expected by Flask backend based on previous update
+                 formData.append(`captures[${index}][dataUrl]`, capture.dataUrl);
+                 formData.append(`captures[${index}][effect]`, capture.effect || 'none'); // Default to 'none' if missing
              } else {
-                 console.warn(`Skipping invalid dataUrl at index ${index} for photobooth backend`);
+                 console.warn(`Skipping invalid capture data structure at index ${index}`);
              }
         });
 
+        // --- Send data using Fetch API ---
         fetch('/photobooth_process', { method: 'POST', body: formData })
             .then(response => {
-                const contentType = response.headers.get("content-type");
-                if (!response.ok && (!contentType || contentType.indexOf("application/json") === -1)) {
-                    return response.text().then(text => { throw new Error(`Server error: ${response.status} - ${text}`); });
-                }
-                return response.json().then(data => ({ ok: response.ok, status: response.status, data }));
+                 // Improved response handling: Check content type before assuming JSON
+                 const contentType = response.headers.get("content-type");
+                 if (!response.ok) {
+                     // If not OK and not JSON, try to get text error
+                     if (!contentType || contentType.indexOf("application/json") === -1) {
+                          return response.text().then(text => {
+                               console.error(`Server error (non-JSON): ${response.status} - ${text}`);
+                               throw new Error(`Server error ${response.status}: ${text.substring(0, 100)}...`);
+                          });
+                     }
+                     // If not OK but looks like JSON, parse it for error details
+                     return response.json().then(data => {
+                         console.error("Server processing error (JSON):", data);
+                         throw new Error(data.details || data.error || `Server error ${response.status}`);
+                     });
+                 }
+                 // If OK, assume JSON response
+                 return response.json();
             })
-            .then(({ ok, status, data }) => {
-                if (!ok) { throw new Error(data.details || data.error || `Processing error: ${status}`); }
+            .then(data => {
+                 // Process successful JSON response
+                 if (data.success && data.result_data_url) {
+                     console.log("Photobooth composition successful:", data.filename);
+                     if (photoboothStatusDiv) photoboothStatusDiv.textContent = "Done! ✨";
 
-                if (data.success && data.result_data_url) {
-                    photoboothStatusDiv.textContent = "Done! ✨";
-                    fabric.Image.fromURL(data.result_data_url, (img) => {
-                        clearResultCanvas(false); // Clear placeholder but keep canvas ready
+                     // Display the final composed image/GIF on the result canvas
+                     fabric.Image.fromURL(data.result_data_url, (img) => {
+                         if (!resultCanvas || !resultCanvasWrapper) return;
+                         clearResultCanvas(false); // Clear placeholder but keep canvas ready
 
-                        // Resize result canvas first
-                        resizeFabricCanvas(resultCanvas, resultCanvasWrapper);
-                        // Then place result image
-                        resizeAndPositionImage(resultCanvas, img, true); // Use background for result
+                         // Resize result canvas wrapper *before* placing image
+                         resizeFabricCanvas(resultCanvas, resultCanvasWrapper);
+                         // Display the result, scaled to fit
+                         resizeAndPositionImage(resultCanvas, img, true); // Use background for result
 
-                        processedPlaceholder.style.display = 'none';
-                        resultCanvasWrapper.classList.add('has-content');
+                         processedPlaceholder.style.display = 'none';
+                         resultCanvasWrapper.classList.add('has-content');
 
-                        downloadLink.href = data.result_data_url;
-                        downloadLink.download = data.filename || 'photobooth_result';
-                        downloadLink.style.display = 'block'; // Changed to 'block' or 'inline-block'
-                        if (data.processing_time_seconds !== undefined) {
-                            processingTimeDiv.textContent = `Created in ${data.processing_time_seconds.toFixed(2)}s`;
-                            processingTimeDiv.style.display = 'block';
-                        }
-                        clearError();
-                    }, { crossOrigin: 'anonymous' });
-                    cancelPhotoboothSequence("Success"); // Clean up UI
+                         // Update download link
+                         downloadLink.href = data.result_data_url;
+                         downloadLink.download = data.filename || 'photobooth_result';
+                         downloadLink.style.display = 'block'; // Show download button
 
-                } else {
-                    throw new Error(data.error || 'Processing failed on server.');
-                }
+                         // Show processing time
+                         if (data.processing_time_seconds !== undefined && processingTimeDiv) {
+                             processingTimeDiv.textContent = `Created in ${data.processing_time_seconds.toFixed(2)}s`;
+                             processingTimeDiv.style.display = 'block';
+                         }
+                         clearError(); // Clear any previous errors
+                     }, { crossOrigin: 'anonymous' });
+
+                     // Clean up photobooth UI state after success
+                     cancelPhotoboothSequence("Success");
+
+                 } else {
+                     // Handle cases where backend returns success:false or unexpected format
+                     console.error("Photobooth backend returned success=false or invalid data:", data);
+                     throw new Error(data.error || data.details || 'Processing failed on server (unexpected response).');
+                 }
             })
             .catch(error => {
-                console.error('Error processing photobooth:', error);
-                showError(`Photobooth failed: ${error.message}`);
-                photoboothStatusDiv.textContent = "Processing Failed!";
-                clearResultCanvas(true);
-                cancelPhotoboothSequence("Processing Error"); // Clean up UI
+                 // Catch fetch errors, network errors, or errors thrown from response handling
+                 console.error('Error during photobooth processing request:', error);
+                 showError(`Photobooth failed: ${error.message || 'Network error or server unreachable'}`);
+                 if (photoboothStatusDiv) photoboothStatusDiv.textContent = "Processing Failed!";
+                 clearResultCanvas(true); // Show placeholder on error
+
+                 // Clean up photobooth UI state on error
+                 cancelPhotoboothSequence("Processing Error");
             })
             .finally(() => {
-                showLoading(false); // Hide general loading state
+                 // Always runs, regardless of success or failure
+                 showLoading(false); // Hide general loading indicator and re-enable controls
             });
     }
 
-    // Cleanup function for photobooth mode
+    // Cleanup function for photobooth mode - resets UI and state
     function cancelPhotoboothSequence(reason = "Cancelled") {
+        if (!isPhotoboothMode) return; // Only run if mode is active
+
         console.log(`Stopping Photobooth Mode: ${reason}`);
-        if (!isPhotoboothMode) return;
         isPhotoboothMode = false;
-        clearInterval(photoboothTimer); photoboothTimer = null;
+        clearInterval(photoboothTimer); // Clear any active countdown timer
+        photoboothTimer = null;
+        photoboothCaptures = []; // Clear captured data
+        photoboothShotsTaken = 0;
+        photoboothCurrentEffect = 'none'; // Reset effect selection
 
-        if(photoboothControlsDiv) photoboothControlsDiv.style.display = 'none';
-        if(cancelPhotoboothButton) cancelPhotoboothButton.style.display = 'none';
-        if(photoboothSnapshotPreview) photoboothSnapshotPreview.innerHTML = '';
+        // Hide active photobooth UI elements
+        if (photoboothControlsDiv) photoboothControlsDiv.style.display = 'none';
+        if (cancelPhotoboothButton) cancelPhotoboothButton.style.display = 'none';
+        if (photoboothSnapshotPreview) photoboothSnapshotPreview.innerHTML = ''; // Clear thumbnails
+        if (perShotEffectArea) perShotEffectArea.style.display = 'none'; // Hide per-shot effect selector
+
+        // Reset countdown timer visual state (if elements exist)
         if (photoboothCountdownCircle) {
-             photoboothCountdownCircle.style.transition = 'none';
-             photoboothCountdownCircle.style.strokeDashoffset = 283;
+            photoboothCountdownCircle.style.transition = 'none'; // Stop any ongoing animation
+            photoboothCountdownCircle.style.strokeDashoffset = 283; // Reset to start
         }
+        if(photoboothCountdownText) photoboothCountdownText.textContent = PHOTOBOOTH_COUNTDOWN_SECONDS; // Reset text
+        if(photoboothCountdownVisualDiv) photoboothCountdownVisualDiv.style.display = 'none'; // Hide timer
 
-        // Re-enable controls robustly checking for existence
-        if (startWebcamButton) startWebcamButton.disabled = !!currentStream;
-        if (stopWebcamButton) stopWebcamButton.disabled = !currentStream;
-        if (captureFrameButton) captureFrameButton.disabled = !currentStream;
-        if (startPhotoboothButton) {
-             startPhotoboothButton.disabled = !currentStream;
-             startPhotoboothButton.innerHTML = `<i class="fas fa-photo-film"></i> Start Photobooth`;
-             startPhotoboothButton.title = currentStream ? "Start the photobooth sequence!" : "Start webcam to use photobooth.";
-        }
-        if (photoUploadInput) photoUploadInput.disabled = false;
-        if (effectSelect) effectSelect.disabled = false;
-        if (photoboothLayoutSelect) photoboothLayoutSelect.disabled = false;
-        if (photoboothShotsSelect) photoboothShotsSelect.disabled = false;
-        if (photoboothGifCheckbox) photoboothGifCheckbox.disabled = false;
 
-        updateApplyButtonReadiness(); // Re-check apply button state
-
-        // Ensure general loading indicator is also off if cancelling mid-process
+        // Re-evaluate and set the state of main controls (using showLoading handles most of this)
+        // Call showLoading(false) which re-enables controls based on current state (e.g., webcam status)
         showLoading(false);
+
+        // Explicitly ensure photobooth start button text/state is correct if webcam is still running
+         if (startPhotoboothButton) {
+             if (currentStream) {
+                 startPhotoboothButton.disabled = false;
+                 startPhotoboothButton.innerHTML = `<i class="fas fa-photo-film"></i> Start Photobooth`;
+                 startPhotoboothButton.title = "Start the photobooth sequence!";
+             } else {
+                  startPhotoboothButton.disabled = true;
+                  startPhotoboothButton.innerHTML = `<i class="fas fa-photo-film"></i> Start Photobooth`;
+                  startPhotoboothButton.title = "Start webcam to use photobooth.";
+             }
+         }
+         // Re-enable parameter inputs for photobooth options
+         if(photoboothLayoutSelect) photoboothLayoutSelect.disabled = false;
+         if(photoboothShotsSelect) photoboothShotsSelect.disabled = false;
+         if(photoboothFrameSelect) photoboothFrameSelect.disabled = false;
+         if(photoboothGifCheckbox) photoboothGifCheckbox.disabled = false;
+         if(gifDurationInput) gifDurationInput.disabled = false; // Re-enable GIF duration if needed
+
+        console.log("Photobooth sequence controls reset.");
     }
 
 
