@@ -57,7 +57,7 @@ Powered by Python, Flask, OpenCV, TensorFlow, MediaPipe, and Fabric.js, the stud
     * Organized controls within collapsible sections.
     * Clear loading indicators and helpful error messages.
     * (Optional) Elegant animated particle background (tsParticles).
-* 📱 **Responsive Across Devices:** Designed for a smooth experience on desktops, tablets, and smartphones.
+* 📱 **Responsive Across Devices:** Designed for a smooth experience on desktops.
 * 💾 **One-Click Download:** Easily save your final masterpiece.
 
 ---
