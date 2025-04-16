@@ -10,17 +10,10 @@
 [![MediaPipe](https://img.shields.io/badge/MediaPipe-Vision%20AI-green?style=for-the-badge&logo=google&logoColor=white)](https://developers.google.com/mediapipe)
 
 ---
-
+https://github.com/user-attachments/assets/e5a44425-5268-4c54-875f-2da7b3e0d7cf
 ## 🎬 Take a Sneak Peek!
 
 Curious about what the AI Photoshoot Studio can do? Watch this quick animated tour showcasing image uploads, webcam captures, AI style transfer, photobooth fun, and more!
-
-<p align="center">
-   https://github.com/user-attachments/assets/e5a44425-5268-4c54-875f-2da7b3e0d7cf
-  <br>
-</p>
-
----
 
 Welcome to the **AI Photoshoot Studio** – your creative hub for transforming images! This web application blends webcam interaction, canvas editing, a playful photobooth, and a suite of backend image effects, including AI-powered virtual backgrounds and artistic style transfer.
 
@@ -204,4 +197,3 @@ Future releases may adopt a different license. Please respect the current propri
 ---
 
 Thanks for checking out the AI Photoshoot Studio! Stay tuned for more updates.
-https://github.com/Owono2001/AI-Photoshoot-Studio/issues/4#issue-2998306534
