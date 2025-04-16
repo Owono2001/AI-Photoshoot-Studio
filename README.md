@@ -16,9 +16,8 @@
 Curious about what the AI Photoshoot Studio can do? Watch this quick animated tour showcasing image uploads, webcam captures, AI style transfer, photobooth fun, and more!
 
 <p align="center">
-  https://github.com/user-attachments/assets/9e6f3a29-ef1d-480d-b3ca-17fdbf40e23c
+ https://github.com/user-attachments/assets/fe367cef-68ab-449c-b8b9-44127662e25a
   <br>
-  <em>(Animated GIF Showcase - loading may take a moment)</em>
 </p>
 
 ---
