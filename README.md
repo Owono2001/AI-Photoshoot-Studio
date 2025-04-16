@@ -204,3 +204,4 @@ Future releases may adopt a different license. Please respect the current propri
 ---
 
 Thanks for checking out the AI Photoshoot Studio! Stay tuned for more updates.
+https://github.com/Owono2001/AI-Photoshoot-Studio/issues/4#issue-2998306534
