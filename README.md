@@ -45,9 +45,18 @@ See the application in action:
     * Optionally generate an animated GIF from the captured shots.
 
 ---
-
 ## Current Status
 
 This project is currently under development. While the core functionalities are implemented and accessible via the link above, further improvements and features may be added over time.
 
 *(This application is provided as a demonstration.)*
+
+---
+
+## 📊 Analytics (Owner Access)
+
+Real-time and historical visitor analytics for this application can be viewed via Google Analytics. Access requires login to the associated Google account.
+
+➡️ [**View Google Analytics Dashboard**](https://analytics.google.com/analytics/web/#/p487154168/realtime/overview?params=_u..nav%3Dmaui)
+
+---
